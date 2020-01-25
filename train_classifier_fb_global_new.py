@@ -180,10 +180,4 @@ if __name__ == '__main__': # if this file is been run directly by Python
             del(X_test)
             del(y_test)
             del(X_list)
-            # X_test, crops = build_test_crops(X_test, increment=5)
-            # y_test = [ y_test for l in range(crops)]
-            # y_test = np.stack(y_test, axis=-1).flatten()
-            # evaluate_model(X_test, y_test, i+1, crops)
-            # del(X_test)
-            # del(y_test)
             gc.collect()
