@@ -169,7 +169,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
             del(X_list)
             gc.collect()
             X_test, y_test = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
-            X_list = build_crops(X_test, increment=20)
+            X_list = build_crops(X_test, increment=5)
             X_indices = []
             crops = len(X_list)
             trials = len(X_list[0])
