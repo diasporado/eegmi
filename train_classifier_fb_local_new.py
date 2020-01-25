@@ -10,14 +10,10 @@ from keras.layers import Dense,BatchNormalization,AveragePooling2D,MaxPooling2D,
     Convolution2D,Activation,Flatten,Dropout,Convolution1D,Reshape,Conv3D,TimeDistributed,LSTM,AveragePooling2D, \
     Input, AveragePooling3D, MaxPooling3D, concatenate, LeakyReLU, AveragePooling1D, GlobalAveragePooling1D, \
     multiply
-from methods import se_block, build_train_crops, build_test_crops
-from DataGenerator import DataGenerator
 from keras import optimizers, callbacks
-from tqdm import tqdm
-import matplotlib
-#matplotlib.use('Agg')
-#import matplotlib.pyplot as plt
-#import seaborn as sn
+
+from methods import se_block, build_crops, build_test_crops
+from DataGenerator import DataGenerator
 import read_bci_data_fb
 
 '''  Parameters '''
@@ -100,21 +96,36 @@ def train(X_list, y, train_indices, val_indices, subject):
 
 
 
-def evaluate_model(X_test, y_test, subject, crops):
-    
-    #X_test = np.split(X_test, [1,2,3], axis=4)
+def evaluate_model(X_list, y_test, X_indices, subject):
+
+    X_shape = X_list[0].shape # (273, 250, 6, 7, 9)
+    params = {
+        'dim': (X_shape[1], X_shape[2], X_shape[3]),
+        'batch_size': batch_size,
+        'n_classes': len(np.unique(y)),
+        'n_channels': 9,
+        'shuffle': True,
+        'parallel_params': {
+            'axis': 4,
+            'dim': 9 # for splitting the 9 bandpass filter dim of the input
+        }
+    }
+
     actual = [ all_classes[i] for i in y_test ]
-    #actual = np.hstack([ [i]*crops for i in actual ]) # Uncomment to enable crop-based testing
-    
-    num_trials = int(len(X_test)/crops)
+    trials = X_shape[0]
+    crops = len(X_list)
     predicted = []
     
     # Multi-class Classification
     model_name = 'A0{:d}_model'.format(subject)
     model = load_model('./{}/{}.hdf5'.format(folder_path,model_name))
-    y_pred = model.predict(X_test)
-    #Y_preds = np.argmax(y_pred, axis=1)
-    Y_preds = np.argmax(y_pred, axis=1).reshape(num_trials, crops)
+    
+    test_generator = DataGenerator(X_list, y_test, X_indices, **params)
+    y_pred = model.predict_generator(
+        generator=test_generator, verbose=1,
+        use_multiprocessing=True, workers=4)
+
+    Y_preds = np.argmax(y_pred, axis=1).reshape(trials, crops)
     for j in Y_preds:
         (values,counts) = np.unique(j, return_counts=True)
         ind=np.argmax(counts)
@@ -152,18 +163,18 @@ if __name__ == '__main__': # if this file is been run directly by Python
     subj_test_order = [ np.argwhere(np.array(subjects_test)==i+1)[0][0]
                     for i in range(len(subjects_test))]
 
-    events = 273
-
     # Iterate training and test on each subject separately
     for i in range(9):
         train_index = subj_train_order[i] 
         test_index = subj_test_order[i]
         np.random.seed(123)
         X, y = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
-        X_list, crops = build_train_crops(X, increment=5)
+        X_list = build_crops(X, increment=5)
         X_indices = []
+        crops = len(X_list)
+        trials = len(X_list[0])
         for a in range(crops):
-            for b in range(events):
+            for b in range(trials):
                 X_indices.append((a, b))
         X_indices = np.array(X_indices)
         train_indices, val_indices = train_test_split(X_indices, test_size=0.2)
@@ -176,10 +187,15 @@ if __name__ == '__main__': # if this file is been run directly by Python
             del(X_list)
             gc.collect()
             X_test, y_test = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
-            X_test, crops = build_test_crops(X_test, increment=5)
-            y_test = [ y_test for l in range(crops)]
-            y_test = np.stack(y_test, axis=-1).flatten()
-            evaluate_model(X_test, y_test, i+1, crops)
+            X_list = build_crops(X_test, increment=5)
+            X_indices = []
+            crops = len(X_list)
+            trials = len(X_list[0])
+            for a in range(crops):
+                for b in range(trials):
+                    X_indices.append((a, b))
+            evaluate_model(X_list, y_test, X_indices, i+1)
             del(X_test)
             del(y_test)
+            del(X_list)
             gc.collect()

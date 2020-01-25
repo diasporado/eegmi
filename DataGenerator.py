@@ -49,11 +49,11 @@ class DataGenerator(keras.utils.Sequence):
         # Generate data
         for i, ID in enumerate(list_IDs_temp):
             crop = ID[0]
-            event = ID[1]
+            trial = ID[1]
             # Store sample
-            X[i,] = self.data[crop][event]
+            X[i,] = self.data[crop][trial]
             # Store class
-            y[i] = self.labels[event]
+            y[i] = self.labels[trial]
 
         y_classes = keras.utils.to_categorical(y, num_classes=self.n_classes)
 
