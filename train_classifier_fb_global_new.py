@@ -12,7 +12,7 @@ from keras.layers import Dense,BatchNormalization,AveragePooling2D,MaxPooling2D,
     multiply
 from keras import optimizers, callbacks
 
-from methods import se_block, build_crops, build_test_crops
+from methods import se_block, build_crops
 from DataGenerator import DataGenerator
 import read_bci_data_fb
 
