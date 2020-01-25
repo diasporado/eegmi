@@ -143,7 +143,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
         test_index = subj_test_order[i]
         np.random.seed(123)
         X, y = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
-        X_list, crops = build_train_crops(X, increment=20)
+        X_list, crops = build_train_crops(X, increment=5)
         X_indices = []
         for a in range(crops):
             for b in range(events):
@@ -159,7 +159,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
             del(X_list)
             gc.collect()
             X_test, y_test = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
-            X_test, crops = build_test_crops(X_test, increment=20)
+            X_test, crops = build_test_crops(X_test, increment=5)
             y_test = [ y_test for l in range(crops)]
             y_test = np.stack(y_test, axis=-1).flatten()
             evaluate_model(X_test, y_test, i+1, crops)
