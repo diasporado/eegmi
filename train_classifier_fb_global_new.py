@@ -107,8 +107,8 @@ def evaluate_model(X_list, y_test, X_indices, subject):
         generator=test_generator, verbose=1,
         use_multiprocessing=True, workers=4)
 
-    Y_preds = np.argmax(y_pred, axis=1).reshape(trials, crops)
-    # Y_preds = Y_preds.transpose(1, 0)
+    Y_preds = np.argmax(y_pred, axis=1).reshape(crops, trials)
+    Y_preds = Y_preds.transpose(1, 0)
     
     for j in Y_preds:
         (values,counts) = np.unique(j, return_counts=True)
