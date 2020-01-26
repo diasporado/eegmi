@@ -92,7 +92,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
         'batch_size': trials,
         'n_classes': len(np.unique(y_test)),
         'n_channels': 9,
-        'shuffle': True
+        'shuffle': False
     }
 
     actual = [ all_classes[i] for i in y_test ]
@@ -107,8 +107,8 @@ def evaluate_model(X_list, y_test, X_indices, subject):
         generator=test_generator, verbose=1,
         use_multiprocessing=True, workers=4)
 
-    Y_preds = np.argmax(y_pred, axis=1).reshape(trials, crops)
-    # Y_preds = np.transpose(Y_preds)
+    Y_preds = np.argmax(y_pred, axis=1).reshape(crops, trials)
+    Y_preds = np.transpose(Y_preds)
     
     for j in Y_preds:
         (values,counts) = np.unique(j, return_counts=True)
