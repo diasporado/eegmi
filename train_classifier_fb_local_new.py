@@ -99,9 +99,11 @@ def train(X_list, y, train_indices, val_indices, subject):
 def evaluate_model(X_list, y_test, X_indices, subject):
 
     X_shape = X_list[0].shape # (273, 250, 6, 7, 9)
+    trials = X_shape[0]
+    crops = len(X_list)
     params = {
         'dim': (X_shape[1], X_shape[2], X_shape[3]),
-        'batch_size': batch_size,
+        'batch_size': trials,
         'n_classes': len(np.unique(y)),
         'n_channels': 9,
         'shuffle': True,
@@ -112,8 +114,6 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     }
 
     actual = [ all_classes[i] for i in y_test ]
-    trials = X_shape[0]
-    crops = len(X_list)
     predicted = []
     
     # Multi-class Classification
@@ -125,7 +125,9 @@ def evaluate_model(X_list, y_test, X_indices, subject):
         generator=test_generator, verbose=1,
         use_multiprocessing=True, workers=4)
 
-    Y_preds = np.argmax(y_pred, axis=1).reshape(trials, crops)
+    Y_preds = np.argmax(y_pred, axis=1).reshape(crops, trials)
+    Y_preds = Y_preds.transpose(1, 0)
+    
     for j in Y_preds:
         (values,counts) = np.unique(j, return_counts=True)
         ind=np.argmax(counts)

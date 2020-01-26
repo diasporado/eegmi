@@ -85,17 +85,17 @@ def train(X_list, y, train_indices, val_indices, subject):
 def evaluate_model(X_list, y_test, X_indices, subject):
 
     X_shape = X_list[0].shape # (273, 250, 6, 7, 9)
+    trials = X_shape[0]
+    crops = len(X_list)
     params = {
         'dim': (X_shape[1], X_shape[2], X_shape[3]),
-        'batch_size': batch_size,
+        'batch_size': trials,
         'n_classes': len(np.unique(y_test)),
         'n_channels': 9,
         'shuffle': True
     }
 
     actual = [ all_classes[i] for i in y_test ]
-    trials = X_shape[0]
-    crops = len(X_list)
     predicted = []
     
     # Multi-class Classification
@@ -106,8 +106,10 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     y_pred = model.predict_generator(
         generator=test_generator, verbose=1,
         use_multiprocessing=True, workers=4)
+
+    Y_preds = np.argmax(y_pred, axis=1).reshape(crops, trials)
+    Y_preds = Y_preds.transpose(1, 0)
     
-    Y_preds = np.argmax(y_pred, axis=1).reshape(trials, crops)
     for j in Y_preds:
         (values,counts) = np.unique(j, return_counts=True)
         ind=np.argmax(counts)
@@ -163,7 +165,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
         
         tf.reset_default_graph()
         with tf.Session() as sess:
-            train(X_list, y, train_indices, val_indices, i+1)
+            # train(X_list, y, train_indices, val_indices, i+1)
             del(X)
             del(y)
             del(X_list)
