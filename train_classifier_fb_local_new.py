@@ -18,10 +18,10 @@ import read_bci_data_fb
 
 '''  Parameters '''
 folder_path = 'model_results_fb_local'
-batch_size = 128
+batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 500
-early_stopping = 30
+early_stopping = 50
 
 '''
 Training model for classification of EEG samples into motor imagery classes
@@ -106,7 +106,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
         'batch_size': trials,
         'n_classes': len(np.unique(y)),
         'n_channels': 9,
-        'shuffle': True,
+        'shuffle': False,
         'parallel_params': {
             'axis': 4,
             'dim': 9 # for splitting the 9 bandpass filter dim of the input
@@ -126,8 +126,8 @@ def evaluate_model(X_list, y_test, X_indices, subject):
         use_multiprocessing=True, workers=4)
 
     Y_preds = np.argmax(y_pred, axis=1).reshape(crops, trials)
-    Y_preds = Y_preds.transpose(1, 0)
-    
+    Y_preds = np.transpose(Y_preds)
+
     for j in Y_preds:
         (values,counts) = np.unique(j, return_counts=True)
         ind=np.argmax(counts)
