@@ -108,7 +108,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
         use_multiprocessing=True, workers=4)
 
     Y_preds = np.argmax(y_pred, axis=1).reshape(crops, trials)
-    Y_preds = Y_preds.transpose(1, 0)
+    # Y_preds = Y_preds.transpose(1, 0)
     
     for j in Y_preds:
         (values,counts) = np.unique(j, return_counts=True)
@@ -165,7 +165,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
         
         tf.reset_default_graph()
         with tf.Session() as sess:
-            train(X_list, y, train_indices, val_indices, i+1)
+            # train(X_list, y, train_indices, val_indices, i+1)
             del(X)
             del(y)
             del(X_list)
