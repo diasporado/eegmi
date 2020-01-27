@@ -127,7 +127,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     test_generator = DataGenerator(X_list, y_test, X_indices, **params)
     y_pred = model.predict_generator(
         generator=test_generator, verbose=1,
-        use_multiprocessing=True, workers=4)
+        use_multiprocessing=False, workers=4)
 
     Y_preds = np.argmax(y_pred, axis=1).reshape(crops, trials)
     Y_preds = np.transpose(Y_preds)
