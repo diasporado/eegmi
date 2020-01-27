@@ -61,11 +61,7 @@ def train(X_list, y, train_indices, val_indices, subject):
         pipe = Conv3D(64, (1,3,3), strides=(1,1,1), padding='valid')(pipe)
         pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
         pipe = Dense(1, activation=None)(pipe)
-        pipe = BatchNormalization()(pipe)
-        pipe = LeakyReLU(alpha=0.05)(pipe)
-        pipe = Dropout(0.5)(pipe)
         pipe = Reshape((pipe.shape[1].value, 1))(pipe)
-        
         return pipe
 
     pipes = []
@@ -74,6 +70,8 @@ def train(X_list, y, train_indices, val_indices, subject):
 
     pipeline = concatenate(pipes, axis=2)
     pipeline = Dense(64, activation=None)(pipeline)
+    pipeline = BatchNormalization()(pipeline)
+    pipeline = LeakyReLU(alpha=0.05)(ppipelineipe)
     pipeline = AveragePooling1D(pool_size=(75), strides=(15))(pipeline)
     pipeline = Flatten()(pipeline)
 
