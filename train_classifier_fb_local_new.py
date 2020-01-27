@@ -64,7 +64,7 @@ def train(X_list, y, train_indices, val_indices, subject):
         pipe = LeakyReLU(alpha=0.05)(pipe)
         pipe = Dropout(0.5)(pipe)
         pipe = Reshape((pipe.shape[1].value, 64))(pipe)
-        pipe = Dense(1, activation='relu')(pipe)
+        pipe = Dense(1, activation=None)(pipe)
         
         return pipe
 
@@ -73,7 +73,7 @@ def train(X_list, y, train_indices, val_indices, subject):
         pipes.append(layers(inputs[i]))
 
     pipeline = concatenate(pipes, axis=2)
-    pipeline = Dense(64, activation='sigmoid')(pipeline)
+    pipeline = Dense(64, activation=None)(pipeline)
     pipeline = AveragePooling1D(pool_size=(75), strides=(15))(pipeline)
     pipeline = Flatten()(pipeline)
 
@@ -93,7 +93,6 @@ def train(X_list, y, train_indices, val_indices, subject):
         validation_data=validation_generator,
         use_multiprocessing=True, steps_per_epoch=steps,
         workers=4, epochs=n_epoch, verbose=1, callbacks=cb)
-
 
 
 def evaluate_model(X_list, y_test, X_indices, subject):
