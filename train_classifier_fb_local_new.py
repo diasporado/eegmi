@@ -78,6 +78,7 @@ def train(X_list, y, train_indices, val_indices, subject):
     pipeline = BatchNormalization()(pipeline)
     pipeline = LeakyReLU(alpha=0.05)(pipeline)
     pipeline = Dropout(0.5)(pipeline)
+    pipeline = Reshape((pipeline.shape[1].value, 64))(pipeline)
     pipeline = AveragePooling1D(pool_size=(75), strides=(15))(pipeline)
     pipeline = Flatten()(pipeline)
 
