@@ -170,7 +170,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
                     for i in range(len(subjects_test))]
 
     # Iterate training and test on each subject separately
-    for i in range(1,9,1):
+    for i in range(9):
         train_index = subj_train_order[i] 
         test_index = subj_test_order[i]
         np.random.seed(123)
