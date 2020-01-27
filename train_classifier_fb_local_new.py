@@ -71,7 +71,7 @@ def train(X_list, y, train_indices, val_indices, subject):
     pipeline = concatenate(pipes, axis=2)
     pipeline = Dense(64, activation=None)(pipeline)
     pipeline = BatchNormalization()(pipeline)
-    pipeline = LeakyReLU(alpha=0.05)(ppipelineipe)
+    pipeline = LeakyReLU(alpha=0.05)(pipeline)
     pipeline = AveragePooling1D(pool_size=(75), strides=(15))(pipeline)
     pipeline = Flatten()(pipeline)
 
