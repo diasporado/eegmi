@@ -8,8 +8,7 @@ import tensorflow as tf
 from keras.models import Model, Sequential, load_model
 from keras.layers import Dense,BatchNormalization,AveragePooling2D,MaxPooling2D,MaxPooling3D, \
     Convolution2D,Activation,Flatten,Dropout,Convolution1D,Reshape,Conv3D,TimeDistributed,LSTM,AveragePooling3D, \
-    Input, AveragePooling3D, MaxPooling3D, concatenate, LeakyReLU, AveragePooling1D, GlobalAveragePooling1D, \
-    multiply
+    Input, AveragePooling3D, MaxPooling3D, concatenate, LeakyReLU, AveragePooling1D
 from keras import optimizers, callbacks
 
 from methods import se_block, build_crops
@@ -79,7 +78,6 @@ def train(X_list, y, train_indices, val_indices, subject):
         validation_data=validation_generator,
         use_multiprocessing=True, steps_per_epoch=steps,
         workers=4, epochs=n_epoch, verbose=1, callbacks=cb)
-
 
 
 def evaluate_model(X_list, y_test, X_indices, subject):
