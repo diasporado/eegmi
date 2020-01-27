@@ -21,7 +21,7 @@ folder_path = 'model_results_fb_local'
 batch_size = 128
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 500
-early_stopping = 50
+early_stopping = 15
 
 '''
 Training model for classification of EEG samples into motor imagery classes
@@ -57,13 +57,14 @@ def train(X_list, y, train_indices, val_indices, subject):
         inputs.append(Input(shape=(*params['dim'], 1)))
     
     def layers(inputs):
-        pipe = Conv3D(1, (1,3,3), strides=(1,1,1), padding='valid')(inputs)
-        pipe = Conv3D(1, (1,3,3), strides=(1,1,1), padding='valid')(pipe)
-        pipe = Conv3D(1, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
+        pipe = Conv3D(64, (1,3,3), strides=(1,1,1), padding='valid')(inputs)
+        pipe = Conv3D(64, (1,3,3), strides=(1,1,1), padding='valid')(pipe)
+        pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
         pipe = BatchNormalization()(pipe)
         pipe = LeakyReLU(alpha=0.05)(pipe)
         pipe = Dropout(0.5)(pipe)
-        pipe = Reshape((pipe.shape[1].value, 1))(pipe)
+        pipe = Reshape((pipe.shape[1].value, 64))(pipe)
+        pipe = Dense(1, activation='relu')(pipe)
         
         return pipe
 
@@ -72,7 +73,7 @@ def train(X_list, y, train_indices, val_indices, subject):
         pipes.append(layers(inputs[i]))
 
     pipeline = concatenate(pipes, axis=2)
-    pipeline = Dense(64, activation=None)(pipeline)
+    pipeline = Dense(64, activation='sigmoid')(pipeline)
     pipeline = AveragePooling1D(pool_size=(75), strides=(15))(pipeline)
     pipeline = Flatten()(pipeline)
 
