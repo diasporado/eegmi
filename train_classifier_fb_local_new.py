@@ -77,7 +77,6 @@ def train(X_list, y, train_indices, val_indices, subject):
     pipeline = Convolution2D(64, (1,64), strides=(1,1))(pipeline)
     pipeline = BatchNormalization()(pipeline)
     pipeline = LeakyReLU(alpha=0.05)(pipeline)
-    pipeline = Dropout(0.5)(pipeline)
     pipeline = Reshape((pipeline.shape[1].value, 64))(pipeline)
     pipeline = AveragePooling1D(pool_size=(75), strides=(15))(pipeline)
     pipeline = Flatten()(pipeline)
@@ -91,7 +90,7 @@ def train(X_list, y, train_indices, val_indices, subject):
           callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=5,min_lr=0.00001),
           callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_loss',verbose=0,
                                     save_best_only=True, period=1),
-          callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss', min_delta=0.0001)]
+          callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss')]
     model.summary()
     model.fit_generator(
         generator=training_generator,
