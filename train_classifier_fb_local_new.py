@@ -74,7 +74,7 @@ def train(X_list, y, train_indices, val_indices, subject):
     for i in range(params['parallel_params']['dim']):
         pipes.append(layers(inputs[i]))
 
-    pipeline = concatenate(pipes, axis=3)
+    pipeline = concatenate(pipes, axis=2)
     pipeline = Dense(64, activation=None)(pipeline)
     pipeline = BatchNormalization()(pipeline)
     pipeline = LeakyReLU(alpha=0.05)(pipeline)
