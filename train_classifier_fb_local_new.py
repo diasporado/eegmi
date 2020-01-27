@@ -74,7 +74,7 @@ def train(X_list, y, train_indices, val_indices, subject):
         pipes.append(layers(inputs[i]))
 
     pipeline = concatenate(pipes, axis=3)
-    pipeline = Conv3D(64, (1,64,9), strides=(1,1,1))(pipeline)
+    pipeline = Convolution2D(64, (1,64), strides=(1,1))(pipeline)
     pipeline = BatchNormalization()(pipeline)
     pipeline = LeakyReLU(alpha=0.05)(pipeline)
     pipeline = Dropout(0.5)(pipeline)
