@@ -21,7 +21,7 @@ folder_path = 'model_results_fb_local'
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 500
-early_stopping = 15
+early_stopping = 30
 
 '''
 Training model for classification of EEG samples into motor imagery classes
@@ -96,7 +96,7 @@ def train(X_list, y, train_indices, val_indices, subject):
     model.fit_generator(
         generator=training_generator,
         validation_data=validation_generator,
-        use_multiprocessing=True, steps_per_epoch=steps,
+        use_multiprocessing=False, steps_per_epoch=steps,
         workers=4, epochs=n_epoch, verbose=1, callbacks=cb)
 
 
@@ -170,7 +170,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
                     for i in range(len(subjects_test))]
 
     # Iterate training and test on each subject separately
-    for i in range(9):
+    for i in range(1,9,1):
         train_index = subj_train_order[i] 
         test_index = subj_test_order[i]
         np.random.seed(123)
