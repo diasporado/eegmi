@@ -29,6 +29,19 @@ def square(x):
     return tf.where(orig < -2.0, -tf.ones_like(x), x)
 
 get_custom_objects().update({'square': Activation(square)})
+    
+def layers(inputs):
+    pipe = Reshape((inputs.shape[1].value, inputs.shape[2].value, 1))(inputs)
+    pipe = DepthwiseConv2D(kernel_size=(25, 1), strides=1, depth_multiplier=40)(pipe)
+    pipe = Reshape((pipe.shape[1].value, pipe.shape[2].value, pipe.shape[3].value, 1))(pipe)
+    pipe = Conv3D(40, (1,22,40), strides=(1,1,1))(pipe)
+    pipe = BatchNormalization()(pipe)
+    pipe = Activation(square, name='square')(pipe)
+    pipe = Dropout(0.5)(pipe)
+    pipe = Reshape((pipe.shape[1].value, 40))(pipe)
+    pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
+    pipe = Flatten()(pipe)
+    return pipe
 
 '''  Parameters '''
 folder_path = 'model_results_shallow_convnet'
@@ -57,26 +70,11 @@ def train(X_list, y, train_indices, val_indices, subject):
     validation_generator = DataGenerator(X_list, y, val_indices, **params)
 
     steps = len(training_generator)
-    output_dim = params['n_classes']
     loss = 'categorical_crossentropy'
     activation = 'softmax'
+    output_dim = params['n_classes']
 
     inputs = Input(shape=(X_shape[1], X_shape[2]))
-    
-    def layers(inputs):
-        pipe = Reshape((inputs.shape[1].value, inputs.shape[2].value, 1))(inputs)
-        pipe = DepthwiseConv2D(kernel_size=(25, 1), strides=1, depth_multiplier=40)(pipe)
-        pipe = Reshape((pipe.shape[1].value, pipe.shape[2].value, pipe.shape[3].value, 1))(pipe)
-        pipe = Conv3D(40, (1,22,40), strides=(1,1,1))(pipe)
-        pipe = BatchNormalization()(pipe)
-        # pipe = Activation('elu')(pipe)
-        pipe = Activation(square, name='square')(pipe)
-        pipe = Dropout(0.5)(pipe)
-        pipe = Reshape((pipe.shape[1].value, 40))(pipe)
-        pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
-        pipe = Flatten()(pipe)
-        return pipe
-
     pipeline = layers(inputs)
     output = Dense(output_dim, activation='softmax')(pipeline)
     model = Model(inputs=inputs, outputs=output)
@@ -114,7 +112,13 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     
     # Multi-class Classification
     model_name = 'A0{:d}_model'.format(subject)
-    model = load_model('./{}/{}.hdf5'.format(folder_path,model_name), custom_objects={'square' : Activation(square)})
+    activation = 'softmax'
+    output_dim = params['n_classes']
+    inputs = Input(shape=(X_shape[1], X_shape[2]))
+    pipeline = layers(inputs)
+    output = Dense(output_dim, activation='softmax')(pipeline)
+    model = Model(inputs=inputs, outputs=output)
+    model.load_weights('./{}/{}.hdf5'.format(folder_path,model_name))
 
     test_generator = DataGenerator(X_list, y_test, X_indices, **params)
     y_pred = model.predict_generator(

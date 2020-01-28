@@ -110,6 +110,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     # Multi-class Classification
     model_name = 'A0{:d}_model'.format(subject)
     output_dim = params['n_classes']
+    activation = 'softmax'
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
     pipeline = layers(inputs, params)
     output = Dense(output_dim, activation=activation)(pipeline)
