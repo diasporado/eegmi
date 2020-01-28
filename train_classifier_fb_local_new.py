@@ -20,7 +20,7 @@ import read_bci_data_fb
 folder_path = 'model_results_fb_local'
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 500
+n_epoch = 100
 early_stopping = 15
 
 '''
@@ -167,7 +167,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
 
         tf.reset_default_graph()
         with tf.Session() as sess:
-            train(X_list, y, train_indices, val_indices, i+1)
+            # train(X_list, y, train_indices, val_indices, i+1)
             del(X)
             del(y)
             del(X_list)
