@@ -8,13 +8,27 @@ import tensorflow as tf
 from keras.models import Sequential, load_model, Model
 from keras.layers import Dense,BatchNormalization,AveragePooling2D,MaxPooling2D, \
     Convolution2D,Activation,Flatten,Dropout,Convolution1D,Reshape,Conv3D,TimeDistributed,LSTM, \
-    concatenate, Input, AveragePooling3D, MaxPooling3D, AveragePooling1D
+    concatenate, Input, AveragePooling3D, MaxPooling3D, AveragePooling1D, DepthwiseConv2D, Activation
 from keras.utils import np_utils
 from keras import optimizers, callbacks
+
+# Custom activation function
+from keras import backend as K
+from keras.utils.generic_utils import get_custom_objects
 
 from methods import build_crops
 from DataGenerator import DataGenerator
 import read_bci_data_shallow_convnet
+
+''' Custom Activation Function '''
+def square(x):
+    orig = x
+    x = tf.where(orig >2.0, (tf.ones_like(x)) , x)
+    x = tf.where(tf.logical_and(0.0 <= orig, orig <=2.0), (x - tf.square(x)/4.), x)
+    x = tf.where(tf.logical_and(-2.0 <= orig, orig < 0), (x + tf.square(x)/4.), x)
+    return tf.where(orig < -2.0, -tf.ones_like(x), x)
+
+get_custom_objects().update({'square': Activation(square)})
 
 '''  Parameters '''
 folder_path = 'model_results_shallow_convnet'
@@ -36,11 +50,7 @@ def train(X_list, y, train_indices, val_indices, subject):
         'batch_size': batch_size,
         'n_classes': len(np.unique(y)),
         'n_channels': 22,
-        'shuffle': True,
-        'parallel_params': {
-            'axis': 2,
-            'dim': 22 # for splitting the 22 channels dim of the input
-        }
+        'shuffle': True
     }
 
     training_generator = DataGenerator(X_list, y, train_indices, **params)
@@ -50,34 +60,28 @@ def train(X_list, y, train_indices, val_indices, subject):
     output_dim = params['n_classes']
     loss = 'categorical_crossentropy'
     activation = 'softmax'
-    
-    inputs = []
 
-    for i in range(params['parallel_params']['dim']):
-        inputs.append(Input(shape=(*params['dim'], 1)))
+    inputs = Input(shape=(X_shape[1], X_shape[2]))
     
     def layers(inputs):
-        pipe = Convolution1D(40, 25, strides=2, activation='linear')(inputs)
-        pipe = Reshape((pipe.shape[1].value, pipe.shape[2].value,1))(pipe)
+        pipe = Reshape((inputs.shape[1].value, inputs.shape[2].value, 1))(inputs)
+        pipe = DepthwiseConv2D(kernel_size=(25, 1), strides=1, depth_multiplier=40)(pipe)
+        pipe = Reshape((pipe.shape[1].value, pipe.shape[2].value, pipe.shape[3].value, 1))(pipe)
+        pipe = Conv3D(40, (1,22,40), strides=(1,1,1))(pipe)
+        pipe = BatchNormalization()(pipe)
+        # pipe = Activation('elu')(pipe)
+        pipe = Activation(square, name='square')(pipe)
+        pipe = Dropout(0.5)(pipe)
+        pipe = Reshape((pipe.shape[1].value, 40))(pipe)
+        pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
+        pipe = Flatten()(pipe)
         return pipe
 
-    pipes = []
-    for i in range(params['parallel_params']['dim']):
-        pipes.append(layers(inputs[i]))
-        
-    pipeline = concatenate(pipes, axis=3)
-    pipeline = Reshape((pipeline.shape[1].value, pipeline.shape[2].value,pipeline.shape[3].value,1))(pipeline)
-    pipeline = Conv3D(40, (1,40,22), strides=(1,1,1))(pipeline)
-    pipeline = BatchNormalization()(pipeline)
-    pipeline = Activation('elu')(pipeline)
-    pipeline = Dropout(0.5)(pipeline)
-    pipeline = Reshape((pipeline.shape[1].value, 40))(pipeline)
-    pipeline = AveragePooling1D(pool_size=(75), strides=(15))(pipeline)
-    pipeline = Flatten()(pipeline)
+    pipeline = layers(inputs)
     output = Dense(output_dim, activation='softmax')(pipeline)
+    model = Model(inputs=inputs, outputs=output)
 
     opt = optimizers.adam(lr=0.001, beta_2=0.999)
-    model = Model(inputs=inputs, outputs=output)
     model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
     cb = [callbacks.ProgbarLogger(count_mode='steps'),
           callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=5,min_lr=0.0001),
@@ -102,11 +106,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
         'batch_size': trials,
         'n_classes': len(np.unique(y_test)),
         'n_channels': 9,
-        'shuffle': False,
-        'parallel_params': {
-            'axis': 2,
-            'dim': 9 # for splitting the 22 channels dim of the input
-        }
+        'shuffle': False
     }
 
     actual = [ all_classes[i] for i in y_test ]
@@ -114,7 +114,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     
     # Multi-class Classification
     model_name = 'A0{:d}_model'.format(subject)
-    model = load_model('./{}/{}.hdf5'.format(folder_path,model_name))
+    model = load_model('./{}/{}.hdf5'.format(folder_path,model_name), custom_objects={'square' : Activation(square)})
 
     test_generator = DataGenerator(X_list, y_test, X_indices, **params)
     y_pred = model.predict_generator(
