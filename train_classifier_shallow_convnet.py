@@ -90,7 +90,7 @@ def train(X_list, y, train_indices, val_indices, subject):
     model.fit_generator(
         generator=training_generator,
         validation_data=validation_generator,
-        use_multiprocessing=True, steps_per_epoch=steps,
+        use_multiprocessing=False, steps_per_epoch=steps,
         workers=4, epochs=n_epoch, verbose=1, callbacks=cb)
 
 
@@ -123,7 +123,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     test_generator = DataGenerator(X_list, y_test, X_indices, **params)
     y_pred = model.predict_generator(
         generator=test_generator, verbose=1,
-        use_multiprocessing=True, workers=4)
+        use_multiprocessing=False, workers=4)
 
     for j in Y_preds:
         (values,counts) = np.unique(j, return_counts=True)
