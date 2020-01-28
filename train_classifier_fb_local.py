@@ -56,13 +56,13 @@ def train(X_list, y, train_indices, val_indices, subject):
         inputs.append(Input(shape=(*params['dim'], 1)))
     
     def layers(inputs):
-        pipe = Conv3D(64, (1,3,3), strides=(1,1,1), padding='valid')(inputs)
+        pipe = Conv3D(64, (1,3,3), strides=1, padding='valid')(inputs)
         pipe = BatchNormalization()(pipe)
         pipe = LeakyReLU(alpha=0.05)(pipe)
-        pipe = Conv3D(64, (1,3,3), strides=(1,1,1), padding='valid')(pipe)
+        pipe = Conv3D(64, (1,3,3), strides=1, padding='valid')(pipe)
         pipe = BatchNormalization()(pipe)
         pipe = LeakyReLU(alpha=0.05)(pipe)
-        pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
+        pipe = Conv3D(64, (1,2,3), strides=1, padding='valid')(pipe)
         pipe = BatchNormalization()(pipe)
         pipe = LeakyReLU(alpha=0.05)(pipe)
         pipe = Dropout(0.5)(pipe)
