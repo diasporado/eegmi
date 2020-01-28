@@ -216,9 +216,9 @@ class DepthwiseConv3D(Conv3D):
         inputs = _preprocess_conv3d_input(inputs, self.data_format)
 
         if self.data_format == 'channels_last':
-            dilation = (1,) + self.dilation_rate + (1,)
+            dilation = (1,) + tuple(self.dilation_rate) + (1,)
         else:
-            dilation = self.dilation_rate + (1,) + (1,)
+            dilation = tuple(self.dilation_rate) + (1,) + (1,)
 
         if self._data_format == 'NCDHW' :
             outputs = tf.concat(
