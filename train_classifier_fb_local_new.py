@@ -11,6 +11,7 @@ from keras.layers import Dense,BatchNormalization,AveragePooling2D,MaxPooling2D,
     Input, AveragePooling3D, MaxPooling3D, concatenate, LeakyReLU, AveragePooling1D
 from keras import optimizers, callbacks
 
+from DepthwiseConv3D import DepthwiseConv3D
 from methods import se_block, build_crops
 from DataGenerator import DataGenerator
 import read_bci_data_fb
@@ -35,11 +36,7 @@ def train(X_list, y, train_indices, val_indices, subject):
         'batch_size': batch_size,
         'n_classes': len(np.unique(y)),
         'n_channels': 9,
-        'shuffle': True,
-        'parallel_params': {
-            'axis': 4,
-            'dim': 9 # for splitting the 9 bandpass filter dim of the input
-        }
+        'shuffle': True
     }
 
     training_generator = DataGenerator(X_list, y, train_indices, **params)
@@ -50,16 +47,14 @@ def train(X_list, y, train_indices, val_indices, subject):
     loss = 'categorical_crossentropy'
     activation = 'softmax'
  
-    inputs = []
-
-    for i in range(params['parallel_params']['dim']):
-        inputs.append(Input(shape=(*params['dim'], 1)))
+    inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
     
     def layers(inputs):
-        pipe = Conv3D(64, (1,3,3), strides=(1,1,1), padding='valid')(inputs)
+        
+        pipe = DepthwiseConv3D(64, (1,3,3), strides=(1,1,1), padding='valid', groups=1)(inputs)
         pipe = BatchNormalization()(pipe)
         pipe = LeakyReLU(alpha=0.05)(pipe)
-        pipe = Conv3D(64, (1,3,3), strides=(1,1,1), padding='valid')(pipe)
+        pipe = DepthwiseConv3D(64, (1,3,3), strides=(1,1,1), padding='valid', groups=1)(pipe)
         pipe = BatchNormalization()(pipe)
         pipe = LeakyReLU(alpha=0.05)(pipe)
         pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
@@ -68,14 +63,10 @@ def train(X_list, y, train_indices, val_indices, subject):
         pipe = Dropout(0.5)(pipe)
         pipe = Reshape((pipe.shape[1].value, 64))(pipe)
         pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
+        pipe = Flatten()(pipe)
         return pipe
-
-    pipes = []
-    for i in range(params['parallel_params']['dim']):
-        pipes.append(layers(inputs[i]))
-
-    pipeline = concatenate(pipes, axis=2)
-    pipeline = Flatten()(pipeline)
+    
+    pipeline = layers(inputs)
     output = Dense(output_dim, activation=activation)(pipeline)
     model = Model(inputs=inputs, outputs=output)
 
