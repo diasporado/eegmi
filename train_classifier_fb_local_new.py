@@ -102,7 +102,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     
     # Multi-class Classification
     model_name = 'A0{:d}_model'.format(subject)
-    model = load_model('./{}/{}.hdf5'.format(folder_path,model_name), custom_objects={'DepthwiseConv3D' : DepthwiseConv3D})
+    model = load_model('./{}/{}.hdf5'.format(folder_path,model_name), custom_objects={'depthwise_conv3d_1' : DepthwiseConv3D, 'depthwise_conv3d_2' : DepthwiseConv3D})
     
     test_generator = DataGenerator(X_list, y_test, X_indices, **params)
     y_pred = model.predict_generator(
