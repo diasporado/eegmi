@@ -122,7 +122,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
         return pipe
     
     pipeline = layers(inputs)
-    output = Dense(4, activation=activation)(pipeline)
+    output = Dense(4, activation='softmax')(pipeline)
     model = Model(inputs=inputs, outputs=output)
     model.load_weights('./{}/{}.hdf5'.format(folder_path, model_name))
     # model = load_model('./{}/{}.hdf5'.format(folder_path, model_name), custom_objects={'DepthwiseConv3D' : DepthwiseConv3D})
