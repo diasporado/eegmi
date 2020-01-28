@@ -27,6 +27,21 @@ early_stopping = 15
 Training model for classification of EEG samples into motor imagery classes
 '''
 
+def layers(inputs):
+    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=16, padding='valid', groups=params['n_channels'])(inputs)
+    pipe = BatchNormalization()(pipe)
+    pipe = LeakyReLU(alpha=0.05)(pipe)
+    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=16, padding='valid', groups=params['n_channels'])(pipe)
+    pipe = BatchNormalization()(pipe)
+    pipe = LeakyReLU(alpha=0.05)(pipe)
+    pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
+    pipe = BatchNormalization()(pipe)
+    pipe = LeakyReLU(alpha=0.05)(pipe)
+    pipe = Reshape((pipe.shape[1].value, 64))(pipe)
+    pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
+    pipe = Flatten()(pipe)
+    return pipe
+
 def train(X_list, y, train_indices, val_indices, subject):
 
     X_shape = X_list[0].shape # (273, 250, 6, 7, 9)
@@ -48,23 +63,6 @@ def train(X_list, y, train_indices, val_indices, subject):
     activation = 'softmax'
  
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
-    
-    def layers(inputs):
-        
-        pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=16, padding='valid', groups=params['n_channels'])(inputs)
-        pipe = BatchNormalization()(pipe)
-        pipe = LeakyReLU(alpha=0.05)(pipe)
-        pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=16, padding='valid', groups=params['n_channels'])(pipe)
-        pipe = BatchNormalization()(pipe)
-        pipe = LeakyReLU(alpha=0.05)(pipe)
-        pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
-        pipe = BatchNormalization()(pipe)
-        pipe = LeakyReLU(alpha=0.05)(pipe)
-        pipe = Reshape((pipe.shape[1].value, 64))(pipe)
-        pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
-        pipe = Flatten()(pipe)
-        return pipe
-    
     pipeline = layers(inputs)
     output = Dense(output_dim, activation=activation)(pipeline)
     model = Model(inputs=inputs, outputs=output)
@@ -102,25 +100,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     
     # Multi-class Classification
     model_name = 'A0{:d}_model'.format(subject)
-
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
-    
-    def layers(inputs):
-        
-        pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=16, padding='valid', groups=params['n_channels'])(inputs)
-        pipe = BatchNormalization()(pipe)
-        pipe = LeakyReLU(alpha=0.05)(pipe)
-        pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=16, padding='valid', groups=params['n_channels'])(pipe)
-        pipe = BatchNormalization()(pipe)
-        pipe = LeakyReLU(alpha=0.05)(pipe)
-        pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
-        pipe = BatchNormalization()(pipe)
-        pipe = LeakyReLU(alpha=0.05)(pipe)
-        pipe = Reshape((pipe.shape[1].value, 64))(pipe)
-        pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
-        pipe = Flatten()(pipe)
-        return pipe
-    
     pipeline = layers(inputs)
     output = Dense(4, activation='softmax')(pipeline)
     model = Model(inputs=inputs, outputs=output)
@@ -173,7 +153,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
                     for i in range(len(subjects_test))]
 
     # Iterate training and test on each subject separately
-    for i in range(9):
+    for i in range(1,9,1):
         train_index = subj_train_order[i] 
         test_index = subj_test_order[i]
         np.random.seed(123)
@@ -190,7 +170,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
 
         tf.reset_default_graph()
         with tf.Session() as sess:
-            # train(X_list, y, train_indices, val_indices, i+1)
+            train(X_list, y, train_indices, val_indices, i+1)
             del(X)
             del(y)
             del(X_list)
