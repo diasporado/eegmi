@@ -120,28 +120,14 @@ def raw_to_data(raw_edf, training=True, drop_rejects=True, subj=None):
         
     if training:
         oScaler = Scaler(scalings='mean').fit(filter_data.flatten().reshape(-1,1))
-        pk.dump(oScaler,open("./fb/subject{}_filter_oscaler.pk".format(subjects[subj]),'wb'))
+        pk.dump(oScaler,open("./global/subject{}_filter_oscaler.pk".format(subjects[subj]),'wb'))
     else:
-        oScaler = pk.load(open("./fb/subject{}_filter_oscaler.pk".format(subjects[subj]),'rb'))
+        oScaler = pk.load(open("./global/subject{}_filter_oscaler.pk".format(subjects[subj]),'rb'))
     
     shape = filter_data.shape
     filter_data = oScaler.transform(filter_data.flatten().reshape(-1,1))
     filter_data = filter_data.reshape(shape)
     filter_data = filter_data.transpose(1,3,2,0) # 273, 1001, 22, 10
-
-    # Augment and reshape data into image
-    filter_data = filter_data.transpose(2,0,1,3) # 22, 273, 1001, 10
-    filter_data = np.split(filter_data,[1,6,13,18,21])
-    empty_ch = np.zeros(filter_data[0].shape)
-    filter_data = np.vstack([empty_ch,empty_ch,empty_ch,filter_data[0],empty_ch,empty_ch,empty_ch,
-                             empty_ch,filter_data[1],empty_ch,
-                             filter_data[2],
-                             empty_ch,filter_data[3],empty_ch,
-                             empty_ch,empty_ch,filter_data[4],empty_ch,empty_ch,
-                             empty_ch,empty_ch,empty_ch,filter_data[5],empty_ch,empty_ch,empty_ch])
-    
-    filter_data = filter_data.transpose(1,2,0,3) # 273, 1001, 42, 10
-    filter_data = filter_data.reshape(filter_data.shape[0],filter_data.shape[1],6,7,filter_data.shape[3]) # 273, 1001, 6, 7, 10
     
     if training:
         return filter_data, y

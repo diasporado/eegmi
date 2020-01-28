@@ -7,9 +7,8 @@ import tensorflow as tf
 
 from keras.models import Model, Sequential, load_model
 from keras.layers import Dense,BatchNormalization,AveragePooling2D,MaxPooling2D,MaxPooling3D, \
-    Convolution2D,Activation,Flatten,Dropout,Convolution1D,Reshape,Conv3D,TimeDistributed,LSTM,AveragePooling2D, \
-    Input, AveragePooling3D, MaxPooling3D, concatenate, LeakyReLU, AveragePooling1D, GlobalAveragePooling1D, \
-    multiply
+    Convolution2D,Activation,Flatten,Dropout,Convolution1D,Reshape,Conv3D,TimeDistributed,LSTM,AveragePooling3D, \
+    Input, AveragePooling3D, MaxPooling3D, concatenate, LeakyReLU, AveragePooling1D
 from keras import optimizers, callbacks
 
 from methods import se_block, build_crops
@@ -17,7 +16,7 @@ from DataGenerator import DataGenerator
 import read_bci_data_fb
 
 '''  Parameters '''
-folder_path = 'model_results_fb_local'
+folder_path = 'model_results_fb_global'
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 500
@@ -28,7 +27,7 @@ Training model for classification of EEG samples into motor imagery classes
 '''
 
 def train(X_list, y, train_indices, val_indices, subject):
-
+    
     X_shape = X_list[0].shape # (273, 250, 6, 7, 9)
 
     params = {
@@ -36,11 +35,7 @@ def train(X_list, y, train_indices, val_indices, subject):
         'batch_size': batch_size,
         'n_classes': len(np.unique(y)),
         'n_channels': 9,
-        'shuffle': True,
-        'parallel_params': {
-            'axis': 4,
-            'dim': 9 # for splitting the 9 bandpass filter dim of the input
-        }
+        'shuffle': True
     }
 
     training_generator = DataGenerator(X_list, y, train_indices, **params)
@@ -50,36 +45,22 @@ def train(X_list, y, train_indices, val_indices, subject):
     output_dim = params['n_classes']
     loss = 'categorical_crossentropy'
     activation = 'softmax'
- 
-    inputs = []
 
-    for i in range(params['parallel_params']['dim']):
-        inputs.append(Input(shape=(*params['dim'], 1)))
+    inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
     
     def layers(inputs):
-        pipe = Conv3D(64, (1,3,3), strides=(1,1,1), padding='valid')(inputs)
+        
+        pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
         pipe = BatchNormalization()(pipe)
         pipe = LeakyReLU(alpha=0.05)(pipe)
-        pipe = Conv3D(64, (1,3,3), strides=(1,1,1), padding='valid')(pipe)
-        pipe = BatchNormalization()(pipe)
-        pipe = LeakyReLU(alpha=0.05)(pipe)
-        pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
-        pipe = BatchNormalization()(pipe)
-        pipe = LeakyReLU(alpha=0.05)(pipe)
-        pipe = Dense(1, activation=None)(pipe)
-        pipe = Reshape((pipe.shape[1].value, 1))(pipe)
+        pipe = Dropout(0.5)(pipe)
+        pipe = Reshape((pipe.shape[1].value, 64))(pipe)
+        pipe = se_block(pipe, compress_rate = 16)
+        pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
+        pipe = Flatten()(pipe)
         return pipe
-
-    pipes = []
-    for i in range(params['parallel_params']['dim']):
-        pipes.append(layers(inputs[i]))
-
-    pipeline = concatenate(pipes, axis=2)
-    pipeline = Dense(64, activation=None)(pipeline)
-    pipeline = BatchNormalization()(pipeline)
-    pipeline = LeakyReLU(alpha=0.05)(pipeline)
-    pipeline = AveragePooling1D(pool_size=(75), strides=(15))(pipeline)
-    pipeline = Flatten()(pipeline)
+    
+    pipeline = layers(inputs)
 
     output = Dense(output_dim, activation=activation)(pipeline)
     model = Model(inputs=inputs, outputs=output)
@@ -90,12 +71,12 @@ def train(X_list, y, train_indices, val_indices, subject):
           callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=5,min_lr=0.00001),
           callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_loss',verbose=0,
                                     save_best_only=True, period=1),
-          callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss')]
+          callbacks.EarlyStopping(patience=early_stopping, monitor='val_accuracy', min_delta=0.0001)]
     model.summary()
     model.fit_generator(
         generator=training_generator,
-        validation_data=validation_generator, max_queue_size=30,
-        use_multiprocessing=False, steps_per_epoch=steps, 
+        validation_data=validation_generator,
+        use_multiprocessing=True, steps_per_epoch=steps,
         workers=4, epochs=n_epoch, verbose=1, callbacks=cb)
 
 
@@ -109,11 +90,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
         'batch_size': trials,
         'n_classes': len(np.unique(y_test)),
         'n_channels': 9,
-        'shuffle': False,
-        'parallel_params': {
-            'axis': 4,
-            'dim': 9 # for splitting the 9 bandpass filter dim of the input
-        }
+        'shuffle': False
     }
 
     actual = [ all_classes[i] for i in y_test ]
@@ -121,16 +98,16 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     
     # Multi-class Classification
     model_name = 'A0{:d}_model'.format(subject)
-    model = load_model('./{}/{}.hdf5'.format(folder_path,model_name))
-    
+    model = load_model('./{}/{}.hdf5'.format(folder_path, model_name))
+
     test_generator = DataGenerator(X_list, y_test, X_indices, **params)
     y_pred = model.predict_generator(
         generator=test_generator, verbose=1,
-        use_multiprocessing=False, workers=4, max_queue_size=30)
+        use_multiprocessing=True, workers=4)
 
     Y_preds = np.argmax(y_pred, axis=1).reshape(crops, trials)
     Y_preds = np.transpose(Y_preds)
-
+    
     for j in Y_preds:
         (values,counts) = np.unique(j, return_counts=True)
         ind=np.argmax(counts)
@@ -183,7 +160,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
                 X_indices.append((a, b))
         X_indices = np.array(X_indices)
         train_indices, val_indices = train_test_split(X_indices, test_size=0.2)
-
+        
         tf.reset_default_graph()
         with tf.Session() as sess:
             train(X_list, y, train_indices, val_indices, i+1)

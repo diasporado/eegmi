@@ -34,9 +34,10 @@ def load_raw(training=False):
     return raw_edf, subjects
 
 
-def raw_to_data(raw_edf, training=True, drop_rejects=True, subj=None):
-
-    tmin, tmax = 0, 4.
+def raw_to_data(raw_edf, training=False, drop_rejects=True, subj=None):
+    
+    tmin, tmax = -0.5, 4.
+    X, y = [], []
 
     stim_code = dict([(32766,1),(769,2), (770,3), (771,4), (772,5),(783,6),(276,7),(277,8),(768,9),
                       (1023,10),(1072,11)])
@@ -80,11 +81,12 @@ def raw_to_data(raw_edf, training=True, drop_rejects=True, subj=None):
     
     events_from_edf.extend(annot_list)
     events_from_edf = np.array(events_from_edf)
-    
+
     events_arr = np.zeros(events_from_edf.shape, dtype=int)
     for (i, i_event) in enumerate(events_from_edf):
 
         index = int((float(i_event[0])) * sampling_frequency)
+
         events_arr[i,:] = index,0,stim_code[int(i_event[2])]
         i=i+1
 
@@ -103,54 +105,39 @@ def raw_to_data(raw_edf, training=True, drop_rejects=True, subj=None):
     if (events_in_edf.__contains__(6)):
         event_id['CUE_UNKNOWN'] = 6
 
-    # Read epochs (train will be done only between -0.5 and 4s)
-    # Testing will be done with a running classifier
+    # Apply band-pass filter
+    raw_edf.filter(4., 40., fir_design='firwin', skip_by_annotation='edge')   # 4-40Hz
 
     picks = pick_types(raw_edf.info, meg=False, eeg=True, 
                        stim=False, eog=False, exclude='bads')
+
+    # Read epochs (train will be done only between -0.5 and 4s)
+    # Testing will be done with a running classifier
+
     epochs = Epochs(raw_edf, events_arr, event_id, tmin, tmax, proj=True, picks=picks,
             baseline=None, preload=True)
-    y = epochs.events[:, 2] - 2
+    
+    X = epochs.get_data().transpose(0,2,1)
+    X_shape = X.shape
 
-    filter_data = []
-    filter_bank = [(4.,8.),(8.,12.),(12.,16.),(16.,20.),(20.,24.),(24.,28.),(28.,32.),(32.,36.),(36.,40)]
-    for _filter in filter_bank:
-        filter_data.append(epochs.copy().filter(_filter[0], _filter[1], fir_design='firwin').get_data())
-    filter_data = np.array(filter_data)
-        
     if training:
-        oScaler = Scaler(scalings='mean').fit(filter_data.flatten().reshape(-1,1))
-        pk.dump(oScaler,open("./fb/subject{}_filter_oscaler.pk".format(subjects[subj]),'wb'))
+        oScaler = Scaler(scalings='mean').fit(X.flatten().reshape(-1,1))
+        pk.dump(oScaler,open("./shallow_convnet/subject{}_oscaler.pk".format(subjects[subj]),'wb'))
     else:
-        oScaler = pk.load(open("./fb/subject{}_filter_oscaler.pk".format(subjects[subj]),'rb'))
-    
-    shape = filter_data.shape
-    filter_data = oScaler.transform(filter_data.flatten().reshape(-1,1))
-    filter_data = filter_data.reshape(shape)
-    filter_data = filter_data.transpose(1,3,2,0) # 273, 1001, 22, 10
+        oScaler = pk.load(open("./shallow_convnet/subject{}_oscaler.pk".format(subjects[subj]),'rb'))
+        
+    y = epochs.events[:, 2] - 2
+    X = oScaler.transform(X.flatten().reshape(-1,1))
+    X = X.reshape(X_shape)
 
-    # Augment and reshape data into image
-    filter_data = filter_data.transpose(2,0,1,3) # 22, 273, 1001, 10
-    filter_data = np.split(filter_data,[1,6,13,18,21])
-    empty_ch = np.zeros(filter_data[0].shape)
-    filter_data = np.vstack([empty_ch,empty_ch,empty_ch,filter_data[0],empty_ch,empty_ch,empty_ch,
-                             empty_ch,filter_data[1],empty_ch,
-                             filter_data[2],
-                             empty_ch,filter_data[3],empty_ch,
-                             empty_ch,empty_ch,filter_data[4],empty_ch,empty_ch,
-                             empty_ch,empty_ch,empty_ch,filter_data[5],empty_ch,empty_ch,empty_ch])
-    
-    filter_data = filter_data.transpose(1,2,0,3) # 273, 1001, 42, 10
-    filter_data = filter_data.reshape(filter_data.shape[0],filter_data.shape[1],6,7,filter_data.shape[3]) # 273, 1001, 6, 7, 10
-    
     if training:
-        return filter_data, y
+        return X, y
     else:
         y = sio.loadmat(label_files_list[label_subj[subj]])['classlabel'].flatten()
         y = np.array([ i - 1 for i in y ])
         if drop_rejects:
             y_drop = [ i for i in range(288) if not accepted_trials_index[i] ]
             y = np.delete(y, y_drop, None)
-        return filter_data, y
+        return X, y
         
-    
+        
