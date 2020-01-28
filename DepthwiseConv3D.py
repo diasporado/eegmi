@@ -175,14 +175,16 @@ class DepthwiseConv3D(Conv3D):
                              'should be defined. Found `None`.')
         self.input_dim = int(input_shape[channel_axis])
 
+        if (self.groups == None):
+            self.groups = self.input_dim
+
         if (self.groups > self.input_dim):
             raise ValueError('The number of groups cannot exceed the number of channels')
 
         if (self.input_dim % self.groups != 0):
             raise ValueError('Warning! The channels dimension is not devisible by the group size chosen')
 
-        if (self.groups == None):
-            self.groups = self.input_dim
+        
 
         depthwise_kernel_shape = (self.kernel_size[0],
                                   self.kernel_size[1],
