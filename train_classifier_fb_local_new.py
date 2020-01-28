@@ -27,7 +27,7 @@ early_stopping = 15
 Training model for classification of EEG samples into motor imagery classes
 '''
 
-def layers(inputs):
+def layers(inputs, params=None):
     pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=16, padding='valid', groups=params['n_channels'])(inputs)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
@@ -63,7 +63,7 @@ def train(X_list, y, train_indices, val_indices, subject):
     activation = 'softmax'
  
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
-    pipeline = layers(inputs)
+    pipeline = layers(inputs, params)
     output = Dense(output_dim, activation=activation)(pipeline)
     model = Model(inputs=inputs, outputs=output)
 
@@ -101,7 +101,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     # Multi-class Classification
     model_name = 'A0{:d}_model'.format(subject)
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
-    pipeline = layers(inputs)
+    pipeline = layers(inputs, params)
     output = Dense(4, activation='softmax')(pipeline)
     model = Model(inputs=inputs, outputs=output)
     model.load_weights('./{}/{}.hdf5'.format(folder_path, model_name))
