@@ -102,8 +102,30 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     
     # Multi-class Classification
     model_name = 'A0{:d}_model'.format(subject)
-    model = load_model('./{}/{}.hdf5'.format(folder_path,model_name), custom_objects={'DepthwiseConv3D' : DepthwiseConv3D})
-    print("model loaded")
+
+    inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
+    
+    def layers(inputs):
+        
+        pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=16, padding='valid', groups=params['n_channels'])(inputs)
+        pipe = BatchNormalization()(pipe)
+        pipe = LeakyReLU(alpha=0.05)(pipe)
+        pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=16, padding='valid', groups=params['n_channels'])(pipe)
+        pipe = BatchNormalization()(pipe)
+        pipe = LeakyReLU(alpha=0.05)(pipe)
+        pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
+        pipe = BatchNormalization()(pipe)
+        pipe = LeakyReLU(alpha=0.05)(pipe)
+        pipe = Reshape((pipe.shape[1].value, 64))(pipe)
+        pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
+        pipe = Flatten()(pipe)
+        return pipe
+    
+    pipeline = layers(inputs)
+    output = Dense(output_dim, activation=activation)(pipeline)
+    model = Model(inputs=inputs, outputs=output)
+    model.load_weights('./{}/{}.hdf5'.format(folder_path, model_name))
+    # model = load_model('./{}/{}.hdf5'.format(folder_path, model_name), custom_objects={'DepthwiseConv3D' : DepthwiseConv3D})
     
     test_generator = DataGenerator(X_list, y_test, X_indices, **params)
     y_pred = model.predict_generator(
