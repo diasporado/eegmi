@@ -51,10 +51,10 @@ def train(X_list, y, train_indices, val_indices, subject):
     
     def layers(inputs):
         
-        pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', groups=params['n_channels'])(inputs)
+        pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=16, padding='valid', groups=params['n_channels'])(inputs)
         pipe = BatchNormalization()(pipe)
         pipe = LeakyReLU(alpha=0.05)(pipe)
-        pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', groups=params['n_channels'])(pipe)
+        pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=16, padding='valid', groups=params['n_channels'])(pipe)
         pipe = BatchNormalization()(pipe)
         pipe = LeakyReLU(alpha=0.05)(pipe)
         pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
@@ -95,11 +95,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
         'batch_size': trials,
         'n_classes': len(np.unique(y_test)),
         'n_channels': 9,
-        'shuffle': False,
-        'parallel_params': {
-            'axis': 4,
-            'dim': 9 # for splitting the 9 bandpass filter dim of the input
-        }
+        'shuffle': False
     }
 
     actual = [ all_classes[i] for i in y_test ]
@@ -172,7 +168,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
 
         tf.reset_default_graph()
         with tf.Session() as sess:
-            train(X_list, y, train_indices, val_indices, i+1)
+            # train(X_list, y, train_indices, val_indices, i+1)
             del(X)
             del(y)
             del(X_list)
