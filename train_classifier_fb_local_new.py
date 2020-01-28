@@ -60,7 +60,6 @@ def train(X_list, y, train_indices, val_indices, subject):
         pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
         pipe = BatchNormalization()(pipe)
         pipe = LeakyReLU(alpha=0.05)(pipe)
-        pipe = Dropout(0.5)(pipe)
         pipe = Reshape((pipe.shape[1].value, 64))(pipe)
         pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
         pipe = Flatten()(pipe)
@@ -168,7 +167,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
 
         tf.reset_default_graph()
         with tf.Session() as sess:
-            # train(X_list, y, train_indices, val_indices, i+1)
+            train(X_list, y, train_indices, val_indices, i+1)
             del(X)
             del(y)
             del(X_list)
