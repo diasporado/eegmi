@@ -18,7 +18,7 @@ import read_bci_data_fb
 
 '''  Parameters '''
 folder_path = 'model_results_fb_local'
-batch_size = 512
+batch_size = 256
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 50
 early_stopping = 15
@@ -73,7 +73,7 @@ def train(X_list, y, train_indices, val_indices, subject):
           callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=5,min_lr=0.00001),
           callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_loss',verbose=0,
                                     save_best_only=True, period=1),
-          callbacks.EarlyStopping(patience=early_stopping, monitor='val_accuracy', min_delta=0.0001)]
+          callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss')]
     model.summary()
     model.fit_generator(
         generator=training_generator,
@@ -153,7 +153,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
                     for i in range(len(subjects_test))]
 
     # Iterate training and test on each subject separately
-    for i in range(9):
+    for i in range(1,9,1):
         train_index = subj_train_order[i] 
         test_index = subj_test_order[i]
         np.random.seed(123)
