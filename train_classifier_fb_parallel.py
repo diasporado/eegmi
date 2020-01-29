@@ -44,7 +44,7 @@ def layers(inputs, params=None):
     pipe2 = LeakyReLU(alpha=0.05)(pipe2)
     pipe2 = Reshape((pipe2.shape[1].value, 64))(pipe2)
 
-    pipe = concatenate([pipe1,pipe2], axis=1)
+    pipe = concatenate([pipe1,pipe2], axis=2)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
     pipe = Flatten()(pipe)
     return pipe
