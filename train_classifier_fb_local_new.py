@@ -18,7 +18,7 @@ import read_bci_data_fb
 
 '''  Parameters '''
 folder_path = 'model_results_fb_local'
-batch_size = 256
+batch_size = 512
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 50
 early_stopping = 15
@@ -28,9 +28,10 @@ Training model for classification of EEG samples into motor imagery classes
 '''
 
 def layers(inputs, params=None):
-    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=16, padding='valid', groups=params['n_channels'])(inputs)
-    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=16, padding='valid', groups=params['n_channels'])(pipe)
-    pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
+    pipe = DepthwiseConv3D(kernel_size=(1,4,4), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
+    pipe = BatchNormalization()(pipe)
+    pipe = LeakyReLU(alpha=0.05)(pipe)
+    pipe = Conv3D(64, (1,2,3), strides=(1,3,4), padding='valid')(pipe)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Reshape((pipe.shape[1].value, 64))(pipe)
