@@ -28,7 +28,7 @@ Training model for classification of EEG samples into motor imagery classes
 '''
 
 def layers(inputs, params=None):
-    pipe = DepthwiseConv3D(kernel_size=(1,4,4), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
+    pipe = DepthwiseConv3D(kernel_size=(1,4,4), strides=(1,1,1), depth_multiplier=16, padding='valid', groups=params['n_channels'])(inputs)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Conv3D(64, (1,2,3), strides=(1,3,4), padding='valid')(pipe)
@@ -150,7 +150,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
                     for i in range(len(subjects_test))]
 
     # Iterate training and test on each subject separately
-    for i in range(1,9,1):
+    for i in range(9):
         train_index = subj_train_order[i] 
         test_index = subj_test_order[i]
         np.random.seed(123)
