@@ -45,7 +45,7 @@ def layers(inputs):
 
 '''  Parameters '''
 folder_path = 'model_results_shallow_convnet'
-batch_size = 512
+batch_size = 256
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 500
 early_stopping = 15
