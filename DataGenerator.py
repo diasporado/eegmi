@@ -4,7 +4,7 @@ import keras
 class DataGenerator(keras.utils.Sequence):
     'Generates data for Keras'
     def __init__(self, data, labels, list_IDs, batch_size=32, dim=(32,32,32), n_channels=1,
-                 n_classes=10, shuffle=True, parallel_params=None):
+                 n_classes=10, shuffle=True, center_loss=None):
         'Initialization'
         self.dim = dim
         self.batch_size = batch_size
@@ -15,7 +15,7 @@ class DataGenerator(keras.utils.Sequence):
         self.n_classes = n_classes
         self.shuffle = shuffle
         self.on_epoch_end()
-        self.parallel_params = parallel_params
+        self.center_loss = center_loss
 
     def __len__(self):
         'Denotes the number of batches per epoch'
@@ -45,6 +45,7 @@ class DataGenerator(keras.utils.Sequence):
         # Initialization
         X = np.empty((self.batch_size, *self.dim, self.n_channels)) # (1024, 250, 6, 7, 9) or (1024, 250, 22)
         y = np.empty((self.batch_size), dtype=int)
+        random_y= np.random.rand(self.batch_size, 1)
 
         # Generate data
         for i, ID in enumerate(list_IDs_temp):
@@ -56,11 +57,6 @@ class DataGenerator(keras.utils.Sequence):
             y[i] = self.labels[trial]
 
         y_classes = keras.utils.to_categorical(y, num_classes=self.n_classes)
-
-        if self.parallel_params:
-            X_split = np.split(X, range(1, self.parallel_params['dim'], 1), axis=self.parallel_params['axis'])
-            for ind, split in enumerate(X_split):
-                split = split.reshape((self.batch_size, *self.dim, 1))
-            return X_split, y_classes
-        else:
-            return X, y_classes
+        if self.center_loss:
+            return [X, y], [y_classes, random_y]
+        return X, y_classes
