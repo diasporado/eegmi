@@ -26,6 +26,16 @@ early_stopping = 10
 Training model for classification of EEG samples into motor imagery classes
 '''
 
+def layers(inputs):
+    pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
+    pipe = BatchNormalization()(pipe)
+    pipe = LeakyReLU(alpha=0.05)(pipe)
+    pipe = Reshape((pipe.shape[1].value, 64))(pipe)
+    pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
+    pipe = Flatten()(pipe)
+    return pipe
+
+
 def train(X_list, y, train_indices, val_indices, subject):
     
     X_shape = X_list[0].shape # (273, 250, 6, 7, 9)
@@ -47,19 +57,7 @@ def train(X_list, y, train_indices, val_indices, subject):
     activation = 'softmax'
 
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
-    
-    def layers(inputs):
-        
-        pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
-        pipe = BatchNormalization()(pipe)
-        pipe = LeakyReLU(alpha=0.05)(pipe)
-        pipe = Reshape((pipe.shape[1].value, 64))(pipe)
-        pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
-        pipe = Flatten()(pipe)
-        return pipe
-    
     pipeline = layers(inputs)
-
     output = Dense(output_dim, activation=activation)(pipeline)
     model = Model(inputs=inputs, outputs=output)
 
