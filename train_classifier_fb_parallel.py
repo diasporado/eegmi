@@ -144,9 +144,30 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     
     # Multi-class Classification
     model_name = 'A0{:d}_model'.format(subject)
-    model = load_model('./{}/{}.hdf5'.format(folder_path, model_name),
-        custom_objects={'<lambda>': lambda true, pred: pred, 'tf': tf})
-    
+    output_dim = params['n_classes']
+    activation = 'softmax'
+    inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
+    pipeline = layers(inputs, params)
+    pipeline = Dense(64)(pipeline)
+    ip1 = LeakyReLU(alpha=0.05, name='ip1')(pipeline)
+    output = Dense(output_dim, activation=activation)(pipeline)
+
+    if use_center_loss or use_contrastive_center_loss:
+        lambda_c = 0.25
+        input_target = Input(shape=(1,))  # single value ground truth labels as inputs
+        centers = Embedding(input_dim=output_dim, output_dim=ip1.shape[-1].value, trainable=True)(input_target)
+        if use_center_loss:
+            l2_loss = Lambda(lambda x: K.sum(K.square(x[0] - x[1][:, 0]), 1, keepdims=True), name='l2_loss')([ip1, centers])
+        elif use_contrastive_center_loss:
+            l2_loss = Lambda(l2_loss_func, name='l2_loss')([ip1, centers])
+
+        model = Model(inputs=[inputs, input_target], outputs=[output, l2_loss])
+        model.load_weights('./{}/{}.hdf5'.format(folder_path,model_name),
+            custom_objects={'<lambda>': lambda true, pred: pred, 'tf': tf})
+    else:
+        model = Model(inputs=inputs, outputs=output)
+        model.load_weights('./{}/{}.hdf5'.format(folder_path,model_name))
+        
     test_generator = DataGenerator(X_list, y_test, X_indices, **params)
     y_pred = model.predict_generator(
         generator=test_generator, verbose=1,
@@ -210,7 +231,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
 
         tf.reset_default_graph()
         with tf.Session() as sess:
-            # train(X_list, y, train_indices, val_indices, i+1)
+            train(X_list, y, train_indices, val_indices, i+1)
             del(X)
             del(y)
             del(X_list)
