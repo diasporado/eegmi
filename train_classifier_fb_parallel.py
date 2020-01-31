@@ -136,7 +136,8 @@ def evaluate_model(X_list, y_test, X_indices, subject):
         'batch_size': trials,
         'n_classes': len(np.unique(y_test)),
         'n_channels': 9,
-        'shuffle': False
+        'shuffle': False,
+        'center_loss': True
     }
 
     actual = [ all_classes[i] for i in y_test ]
