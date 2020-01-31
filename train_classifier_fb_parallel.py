@@ -162,8 +162,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
             l2_loss = Lambda(l2_loss_func, name='l2_loss')([ip1, centers])
 
         model = Model(inputs=[inputs, input_target], outputs=[output, l2_loss])
-        model.load_weights('./{}/{}.hdf5'.format(folder_path,model_name),
-            custom_objects={'<lambda>': lambda true, pred: pred, 'tf': tf})
+        model.load_weights('./{}/{}.hdf5'.format(folder_path,model_name))
     else:
         model = Model(inputs=inputs, outputs=output)
         model.load_weights('./{}/{}.hdf5'.format(folder_path,model_name))
