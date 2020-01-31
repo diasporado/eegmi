@@ -144,13 +144,8 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     
     # Multi-class Classification
     model_name = 'A0{:d}_model'.format(subject)
-    output_dim = params['n_classes']
-    activation = 'softmax'
-    inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
-    pipeline = layers(inputs, params)
-    output = Dense(output_dim, activation=activation)(pipeline)
-    model = Model(inputs=inputs, outputs=output)
-    model.load_weights('./{}/{}.hdf5'.format(folder_path,model_name))
+    model = load_model('./{}/{}.hdf5'.format(folder_path, model_name),
+        custom_objects={'<lambda>': lambda true, pred: pred, 'tf': tf})
     
     test_generator = DataGenerator(X_list, y_test, X_indices, **params)
     y_pred = model.predict_generator(
@@ -215,7 +210,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
 
         tf.reset_default_graph()
         with tf.Session() as sess:
-            train(X_list, y, train_indices, val_indices, i+1)
+            # train(X_list, y, train_indices, val_indices, i+1)
             del(X)
             del(y)
             del(X_list)
