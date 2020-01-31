@@ -21,7 +21,7 @@ folder_path = 'model_results_fb_parallel'
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 500
-early_stopping = 5
+early_stopping = 10
 
 '''
 Training model for classification of EEG samples into motor imagery classes
@@ -35,14 +35,15 @@ def layers(inputs, params=None):
     pipe1 = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     pipe1 = Reshape((pipe1.shape[1].value, 64))(pipe1)
+    pipe1 = AveragePooling1D(pool_size=(75), strides=(15))(pipe1)
 
     pipe2 = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe2 = BatchNormalization()(pipe2)
     pipe2 = LeakyReLU(alpha=0.05)(pipe2)
     pipe2 = Reshape((pipe2.shape[1].value, 64))(pipe2)
+    pipe2 = AveragePooling1D(pool_size=(75), strides=(15))(pipe2)
 
     pipe = concatenate([pipe1,pipe2], axis=2)
-    pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
     pipe = Flatten()(pipe)
     return pipe
 
@@ -77,7 +78,7 @@ def train(X_list, y, train_indices, val_indices, subject):
           callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=5,min_lr=0.00001),
           callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_loss',verbose=0,
                                     save_best_only=True, period=1),
-          callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss')]
+          callbacks.EarlyStopping(patience=early_stopping, monitor='val_accuracy')]
     model.summary()
     model.fit_generator(
         generator=training_generator,
