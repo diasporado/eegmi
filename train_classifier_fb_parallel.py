@@ -23,7 +23,7 @@ use_contrastive_center_loss = False
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 500
-early_stopping = 10
+early_stopping = 5
 
 '''
 Training model for classification of EEG samples into motor imagery classes
@@ -115,9 +115,9 @@ def train(X_list, y, train_indices, val_indices, subject):
 
     cb = [callbacks.ProgbarLogger(count_mode='steps'),
           callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=5,min_lr=0.00001),
-          callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_loss',verbose=0,
+          callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_l2_loss_loss',verbose=0,
                                     save_best_only=True, period=1),
-          callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss')]
+          callbacks.EarlyStopping(patience=early_stopping, monitor='val_l2_loss_loss')]
 
     model.fit_generator(
         generator=training_generator,
@@ -155,7 +155,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     test_generator = DataGenerator(X_list, y_test, X_indices, **params)
     y_pred = model.predict_generator(
         generator=test_generator, verbose=1,
-        use_multiprocessing=False, workers=4, max_queue_size=30)
+        use_multiprocessing=False, workers=4)
 
     Y_preds = np.argmax(y_pred, axis=1).reshape(crops, trials)
     Y_preds = np.transpose(Y_preds)

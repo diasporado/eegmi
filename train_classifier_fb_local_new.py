@@ -75,7 +75,7 @@ def train(X_list, y, train_indices, val_indices, subject):
     model.summary()
     model.fit_generator(
         generator=training_generator,
-        validation_data=validation_generator, max_queue_size=30,
+        validation_data=validation_generator,
         use_multiprocessing=False, steps_per_epoch=steps, 
         workers=4, epochs=n_epoch, verbose=1, callbacks=cb)
 
@@ -108,7 +108,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     test_generator = DataGenerator(X_list, y_test, X_indices, **params)
     y_pred = model.predict_generator(
         generator=test_generator, verbose=1,
-        use_multiprocessing=False, workers=4, max_queue_size=30)
+        use_multiprocessing=False, workers=4)
 
     Y_preds = np.argmax(y_pred, axis=1).reshape(crops, trials)
     Y_preds = np.transpose(Y_preds)
