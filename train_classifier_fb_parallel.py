@@ -73,7 +73,8 @@ def train(X_list, y, train_indices, val_indices, subject):
         'batch_size': batch_size,
         'n_classes': len(np.unique(y)),
         'n_channels': 9,
-        'shuffle': True
+        'shuffle': True,
+        'center_loss': True
     }
 
     training_generator = DataGenerator(X_list, y, train_indices, **params)
