@@ -172,9 +172,11 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     y_pred = model.predict_generator(
         generator=test_generator, verbose=1,
         use_multiprocessing=False, workers=4)
-    print(y_pred)
-    print(np.argmax(y_pred, axis=2))
-    Y_preds = np.argmax(y_pred, axis=1).reshape(crops, trials)
+    print(len(y_pred))
+    print(len(y_pred[0]))
+    print(len(y_pred[0][0]))
+    print(len(y_pred[0][0][0]))
+    Y_preds = np.argmax(y_pred, axis=2).reshape(crops, trials)
     Y_preds = np.transpose(Y_preds)
 
     for j in Y_preds:
