@@ -8,8 +8,8 @@ import tensorflow as tf
 from keras.models import Model, Sequential, load_model
 from keras.layers import Dense,BatchNormalization,AveragePooling2D,MaxPooling2D,MaxPooling3D, \
     Convolution2D,Activation,Flatten,Dropout,Convolution1D,Reshape,Conv3D,TimeDistributed,LSTM,AveragePooling2D, \
-    Input, AveragePooling3D, MaxPooling3D, concatenate, LeakyReLU, AveragePooling1D
-from keras import optimizers, callbacks
+    Input, AveragePooling3D, MaxPooling3D, concatenate, LeakyReLU, AveragePooling1D, Embedding, Lambda
+from keras import optimizers, callbacks, backend as K
 
 from DepthwiseConv3D import DepthwiseConv3D
 from methods import se_block, build_crops
@@ -18,6 +18,8 @@ import read_bci_data_fb
 
 '''  Parameters '''
 folder_path = 'model_results_fb_parallel'
+use_center_loss = True
+use_contrastive_center_loss = False
 batch_size = 128
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 500
@@ -47,6 +49,21 @@ def layers(inputs, params=None):
     pipe = Flatten()(pipe)
     return pipe
 
+def l2_loss_func(x):
+    epsilon = 1e-8
+    output_dim = x[1].shape[-2].value
+    centers = x[1][:, 0] # shape: (?, 1024)
+    expanded_centers = tf.tile(tf.expand_dims(centers, 1),
+                                [1, output_dim, 1])  # (128, 10, 2) repeated centers x128
+    expanded_features = tf.tile(tf.expand_dims(x[0], 1),
+                                 [1, output_dim, 1])  # (128, 10, 2) repeated features x10
+    distance_centers = expanded_features - expanded_centers
+    intra_distances = x[0] - centers
+    l2_loss_intra = K.sum(K.square(intra_distances), 1, keepdims=True)  # shape: (?, 1)
+    inter_distances = K.sum(distance_centers, 1, keepdims=True) - intra_distances
+    l2_loss_inter = K.sum(K.square(inter_distances), 1) + epsilon
+    return l2_loss_intra / l2_loss_inter
+
 def train(X_list, y, train_indices, val_indices, subject):
 
     X_shape = X_list[0].shape # (273, 250, 6, 7, 9)
@@ -63,27 +80,48 @@ def train(X_list, y, train_indices, val_indices, subject):
     validation_generator = DataGenerator(X_list, y, val_indices, **params)
 
     steps = len(training_generator)
+    output_dim = params['n_classes']
     loss = 'categorical_crossentropy'
     activation = 'softmax'
-    output_dim = params['n_classes']
+    opt = optimizers.adam(lr=0.001, beta_2=0.999)
  
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
     pipeline = layers(inputs, params)
+    pipeline = Dense(64)(pipeline)
+    ip1 = LeakyReLU(alpha=0.05, name='ip1')(pipeline)
     output = Dense(output_dim, activation=activation)(pipeline)
-    model = Model(inputs=inputs, outputs=output)
+    
+    if use_center_loss or use_contrastive_center_loss:
+        lambda_c = 0.25
+        input_target = Input(shape=(1,))  # single value ground truth labels as inputs
+        centers = Embedding(input_dim=output_dim, output_dim=ip1.shape[-1].value, trainable=True)(input_target)
+        if use_center_loss:
+            l2_loss = Lambda(lambda x: K.sum(K.square(x[0] - x[1][:, 0]), 1, keepdims=True), name='l2_loss')([ip1, centers])
+        elif use_contrastive_center_loss:
+            l2_loss = Lambda(l2_loss_func, name='l2_loss')([ip1, centers])
 
-    opt = optimizers.adam(lr=0.001, beta_2=0.999)
-    model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
+        model = Model(inputs=[inputs, input_target], outputs=[output, l2_loss])
+        model.compile(optimizer=opt,
+            loss=[loss, lambda y_true, y_pred: y_pred],
+            loss_weights=[1, lambda_c],
+            metrics=['accuracy'])
+    else:
+        model = Model(inputs=inputs, outputs=output)
+        opt = optimizers.adam(lr=0.001, beta_2=0.999)
+        model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
+    
+    model.summary()
+
     cb = [callbacks.ProgbarLogger(count_mode='steps'),
           callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=5,min_lr=0.00001),
           callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_loss',verbose=0,
                                     save_best_only=True, period=1),
-          callbacks.EarlyStopping(patience=early_stopping, monitor='val_accuracy')]
-    model.summary()
+          callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss')]
+
     model.fit_generator(
         generator=training_generator,
-        validation_data=validation_generator, max_queue_size=30,
-        use_multiprocessing=False, steps_per_epoch=steps, 
+        validation_data=validation_generator,
+        use_multiprocessing=False, steps_per_epoch=steps,
         workers=4, epochs=n_epoch, verbose=1, callbacks=cb)
 
 
