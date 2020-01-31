@@ -173,7 +173,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
         generator=test_generator, verbose=1,
         use_multiprocessing=False, workers=4)
     print(y_pred)
-    print(np.argmax(y_pred, axis=1))
+    print(np.argmax(y_pred, axis=2))
     Y_preds = np.argmax(y_pred, axis=1).reshape(crops, trials)
     Y_preds = np.transpose(Y_preds)
 
