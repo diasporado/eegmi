@@ -98,9 +98,10 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     
     # Multi-class Classification
     model_name = 'A0{:d}_model'.format(subject)
+    output_dim = params['n_classes']
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
     pipeline = layers(inputs, params)
-    output = Dense(4, activation='softmax')(pipeline)
+    output = Dense(output_dim, activation='softmax')(pipeline)
     model = Model(inputs=inputs, outputs=output)
     model.load_weights('./{}/{}.hdf5'.format(folder_path, model_name))
     # model = load_model('./{}/{}.hdf5'.format(folder_path, model_name), custom_objects={'DepthwiseConv3D' : DepthwiseConv3D})
