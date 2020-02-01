@@ -15,9 +15,6 @@ from methods import se_block, build_crops
 from DataGenerator import DataGenerator
 import read_bci_data_fb
 
-K.set_floatx('float16')
-K.set_epsilon(1e-4)
-
 '''  Parameters '''
 folder_path = 'model_results_fb_global'
 batch_size = 512
