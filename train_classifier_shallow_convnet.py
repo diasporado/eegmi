@@ -45,7 +45,7 @@ def layers(inputs):
 
 '''  Parameters '''
 folder_path = 'model_results_shallow_convnet'
-batch_size = 64
+batch_size = 512
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 500
 early_stopping = 15
@@ -124,6 +124,9 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     y_pred = model.predict_generator(
         generator=test_generator, verbose=1,
         use_multiprocessing=False, workers=4)
+
+    Y_preds = np.argmax(y_pred, axis=1).reshape(crops, trials)
+    Y_preds = np.transpose(Y_preds)
 
     for j in Y_preds:
         (values,counts) = np.unique(j, return_counts=True)
