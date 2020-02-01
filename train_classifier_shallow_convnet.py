@@ -36,7 +36,7 @@ def layers(inputs):
     pipe = Reshape((pipe.shape[1].value, pipe.shape[2].value, pipe.shape[3].value, 1))(pipe)
     pipe = Dropout(0.5)(pipe)
     pipe = Conv3D(40, (1,22,40), strides=(1,1,1))(pipe)
-    # pipe = BatchNormalization()(pipe)
+    pipe = BatchNormalization()(pipe)
     pipe = Activation(square, name='square')(pipe)
     pipe = Reshape((pipe.shape[1].value, 40))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
@@ -45,10 +45,10 @@ def layers(inputs):
 
 '''  Parameters '''
 folder_path = 'model_results_shallow_convnet'
-batch_size = 64
+batch_size = 512
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 500
-early_stopping = 15
+early_stopping = 50
 
 '''
 Training model for classification of EEG samples into motor imagery classes
