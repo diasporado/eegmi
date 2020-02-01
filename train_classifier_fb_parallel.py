@@ -20,7 +20,7 @@ import read_bci_data_fb
 folder_path = 'model_results_fb_parallel'
 use_center_loss = False
 use_contrastive_center_loss = False
-batch_size = 64
+batch_size = 256
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 500
 early_stopping = 10
@@ -36,15 +36,17 @@ def layers(inputs, params=None):
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     pipe1 = Conv3D(32, (1,2,3), strides=(1,1,1), padding='valid')(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
+    pipe1 = Dropout(rate=0.5)(pipe1)
     pipe1 = Reshape((pipe1.shape[1].value, 32))(pipe1)
+    pipe1 = AveragePooling1D(pool_size=(75), strides=(15))(pipe1)
 
     pipe2 = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe2 = LeakyReLU(alpha=0.05)(pipe2)
     pipe2 = Reshape((pipe2.shape[1].value, 64))(pipe2)
+    pipe2 = AveragePooling1D(pool_size=(75), strides=(15))(pipe2)
 
     pipe = concatenate([pipe1,pipe2], axis=2)
-    pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
-    pipe = Dense(32)(pipe)
+    pipe = Dense(64)(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Flatten()(pipe)
     return pipe
