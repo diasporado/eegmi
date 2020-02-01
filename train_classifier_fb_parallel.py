@@ -18,8 +18,8 @@ import read_bci_data_fb
 
 '''  Parameters '''
 folder_path = 'model_results_fb_parallel'
-use_center_loss = False
-use_contrastive_center_loss = True
+use_center_loss = True
+use_contrastive_center_loss = False
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 500
@@ -230,7 +230,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
 
         tf.reset_default_graph()
         with tf.Session() as sess:
-            train(X_list, y, train_indices, val_indices, i+1)
+            # train(X_list, y, train_indices, val_indices, i+1)
             del(X)
             del(y)
             del(X_list)
