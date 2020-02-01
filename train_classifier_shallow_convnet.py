@@ -48,7 +48,7 @@ folder_path = 'model_results_shallow_convnet'
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 500
-early_stopping = 10
+early_stopping = 15
 
 '''
 Training model for classification of EEG samples into motor imagery classes
