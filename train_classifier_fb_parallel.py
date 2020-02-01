@@ -148,7 +148,6 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     activation = 'softmax'
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
     pipeline = layers(inputs, params)
-    pipeline = Dropout(rate=0.5)(pipeline)
     pipeline = Dense(64)(pipeline)
     ip1 = LeakyReLU(alpha=0.05, name='ip1')(pipeline)
     output = Dense(output_dim, activation=activation)(pipeline)
