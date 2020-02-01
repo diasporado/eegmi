@@ -103,7 +103,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
         'dim': [X_shape[1]],
         'batch_size': trials,
         'n_classes': len(np.unique(y_test)),
-        'n_channels': 9,
+        'n_channels':22,
         'shuffle': False
     }
 
