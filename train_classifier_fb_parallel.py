@@ -18,7 +18,7 @@ import read_bci_data_fb
 
 '''  Parameters '''
 folder_path = 'model_results_fb_parallel'
-use_center_loss = True
+use_center_loss = False
 use_contrastive_center_loss = False
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
@@ -73,7 +73,7 @@ def train(X_list, y, train_indices, val_indices, subject):
         'n_classes': len(np.unique(y)),
         'n_channels': 9,
         'shuffle': True,
-        'center_loss': True
+        'center_loss': False
     }
 
     training_generator = DataGenerator(X_list, y, train_indices, **params)
@@ -87,8 +87,8 @@ def train(X_list, y, train_indices, val_indices, subject):
  
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
     pipeline = layers(inputs, params)
-    pipeline = Dense(64)(pipeline)
-    ip1 = LeakyReLU(alpha=0.05, name='ip1')(pipeline)
+    #pipeline = Dense(64)(pipeline)
+    #ip1 = LeakyReLU(alpha=0.05, name='ip1')(pipeline)
     output = Dense(output_dim, activation=activation)(pipeline)
     
     if use_center_loss or use_contrastive_center_loss:
@@ -136,7 +136,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
         'n_classes': len(np.unique(y_test)),
         'n_channels': 9,
         'shuffle': False,
-        'center_loss': True
+        'center_loss': False
     }
 
     actual = [ all_classes[i] for i in y_test ]
@@ -148,8 +148,8 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     activation = 'softmax'
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
     pipeline = layers(inputs, params)
-    pipeline = Dense(64)(pipeline)
-    ip1 = LeakyReLU(alpha=0.05, name='ip1')(pipeline)
+    #pipeline = Dense(64)(pipeline)
+    #ip1 = LeakyReLU(alpha=0.05, name='ip1')(pipeline)
     output = Dense(output_dim, activation=activation)(pipeline)
 
     if use_center_loss or use_contrastive_center_loss:
