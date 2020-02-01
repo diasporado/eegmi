@@ -23,7 +23,7 @@ use_contrastive_center_loss = False
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 500
-early_stopping = 5
+early_stopping = 10
 
 '''
 Training model for classification of EEG samples into motor imagery classes
@@ -88,6 +88,7 @@ def train(X_list, y, train_indices, val_indices, subject):
  
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
     pipeline = layers(inputs, params)
+    pipeline = Dropout(rate=0.5)(pipeline)
     pipeline = Dense(64)(pipeline)
     ip1 = LeakyReLU(alpha=0.05, name='ip1')(pipeline)
     output = Dense(output_dim, activation=activation)(pipeline)
@@ -115,9 +116,9 @@ def train(X_list, y, train_indices, val_indices, subject):
 
     cb = [callbacks.ProgbarLogger(count_mode='steps'),
           callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=5,min_lr=0.00001),
-          callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_l2_loss_loss',verbose=0,
+          callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_loss',verbose=0,
                                     save_best_only=True, period=1),
-          callbacks.EarlyStopping(patience=early_stopping, monitor='val_l2_loss_loss')]
+          callbacks.EarlyStopping(patience=early_stopping, monitor='val_accuracy')]
 
     model.fit_generator(
         generator=training_generator,
@@ -149,6 +150,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     activation = 'softmax'
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
     pipeline = layers(inputs, params)
+    pipeline = Dropout(rate=0.5)(pipeline)
     pipeline = Dense(64)(pipeline)
     ip1 = LeakyReLU(alpha=0.05, name='ip1')(pipeline)
     output = Dense(output_dim, activation=activation)(pipeline)
