@@ -18,8 +18,8 @@ import read_bci_data_fb
 
 '''  Parameters '''
 folder_path = 'model_results_fb_parallel'
-use_center_loss = True
-use_contrastive_center_loss = False
+use_center_loss = False
+use_contrastive_center_loss = True
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 500
@@ -89,7 +89,6 @@ def train(X_list, y, train_indices, val_indices, subject):
     pipeline = layers(inputs, params)
     pipeline = Dense(64)(pipeline)
     ip1 = LeakyReLU(alpha=0.05, name='ip1')(pipeline)
-    # ip1 = se_block(ip1, compress_rate = 16)
     output = Dense(output_dim, activation=activation)(pipeline)
     
     if use_center_loss or use_contrastive_center_loss:
