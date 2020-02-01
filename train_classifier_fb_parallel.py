@@ -16,9 +16,6 @@ from methods import se_block, build_crops
 from DataGenerator import DataGenerator
 import read_bci_data_fb
 
-K.set_floatx('float16')
-K.set_epsilon(1e-4)
-
 '''  Parameters '''
 folder_path = 'model_results_fb_parallel'
 use_center_loss = True
@@ -39,12 +36,13 @@ def layers(inputs, params=None):
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     pipe1 = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    pipe1 = Dropout(rate=0.5)(pipe1)
+    pipe1 = Dropout(rate=0.8)(pipe1)
     pipe1 = Reshape((pipe1.shape[1].value, 64))(pipe1)
     pipe1 = AveragePooling1D(pool_size=(75), strides=(15))(pipe1)
 
     pipe2 = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe2 = LeakyReLU(alpha=0.05)(pipe2)
+    pipe2 = Dropout(rate=0.2)(pipe2)
     pipe2 = Reshape((pipe2.shape[1].value, 64))(pipe2)
     pipe2 = AveragePooling1D(pool_size=(75), strides=(15))(pipe2)
 
@@ -91,7 +89,6 @@ def train(X_list, y, train_indices, val_indices, subject):
  
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
     pipeline = layers(inputs, params)
-    pipeline = Dropout(rate=0.5)(pipeline)
     pipeline = Dense(64)(pipeline)
     ip1 = LeakyReLU(alpha=0.05, name='ip1')(pipeline)
     # ip1 = se_block(ip1, compress_rate = 16)
@@ -122,7 +119,7 @@ def train(X_list, y, train_indices, val_indices, subject):
           callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=5,min_lr=0.00001),
           callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_loss',verbose=0,
                                     save_best_only=True, period=1),
-          callbacks.EarlyStopping(patience=early_stopping, monitor='val_dense_2_accuracy')]
+          callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss')]
 
     model.fit_generator(
         generator=training_generator,
