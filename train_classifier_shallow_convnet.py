@@ -32,7 +32,7 @@ get_custom_objects().update({'square': Activation(square)})
     
 def layers(inputs):
     pipe = Reshape((inputs.shape[1].value, inputs.shape[2].value, 1))(inputs)
-    pipe = DepthwiseConv2D(kernel_size=(25, 1), strides=1, depth_multiplier=40)(pipe)
+    pipe = DepthwiseConv2D(kernel_size=(25, 1), strides=2, depth_multiplier=40)(pipe)
     pipe = Reshape((pipe.shape[1].value, pipe.shape[2].value, pipe.shape[3].value, 1))(pipe)
     pipe = Dropout(0.5)(pipe)
     pipe = Conv3D(40, (1,22,40), strides=(1,1,1))(pipe)
