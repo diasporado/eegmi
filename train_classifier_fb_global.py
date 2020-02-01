@@ -9,18 +9,21 @@ from keras.models import Model, Sequential, load_model
 from keras.layers import Dense,BatchNormalization,AveragePooling2D,MaxPooling2D,MaxPooling3D, \
     Convolution2D,Activation,Flatten,Dropout,Convolution1D,Reshape,Conv3D,TimeDistributed,LSTM,AveragePooling3D, \
     Input, AveragePooling3D, MaxPooling3D, concatenate, LeakyReLU, AveragePooling1D
-from keras import optimizers, callbacks
+from keras import optimizers, callbacks, backend as K
 
 from methods import se_block, build_crops
 from DataGenerator import DataGenerator
 import read_bci_data_fb
+
+K.set_floatx('float16')
+K.set_epsilon(1e-4)
 
 '''  Parameters '''
 folder_path = 'model_results_fb_global'
 batch_size = 512
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 500
-early_stopping = 10
+early_stopping = 15
 
 '''
 Training model for classification of EEG samples into motor imagery classes

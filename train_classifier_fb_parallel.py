@@ -16,6 +16,9 @@ from methods import se_block, build_crops
 from DataGenerator import DataGenerator
 import read_bci_data_fb
 
+K.set_floatx('float16')
+K.set_epsilon(1e-4)
+
 '''  Parameters '''
 folder_path = 'model_results_fb_parallel'
 use_center_loss = True
@@ -91,6 +94,7 @@ def train(X_list, y, train_indices, val_indices, subject):
     pipeline = Dropout(rate=0.5)(pipeline)
     pipeline = Dense(64)(pipeline)
     ip1 = LeakyReLU(alpha=0.05, name='ip1')(pipeline)
+    ip1 = se_block(ip1, compress_rate = 16)
     output = Dense(output_dim, activation=activation)(pipeline)
     
     if use_center_loss or use_contrastive_center_loss:

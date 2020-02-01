@@ -15,6 +15,9 @@ from methods import se_block, build_crops
 from DataGenerator import DataGenerator
 import read_bci_data_fb
 
+K.set_floatx('float16')
+K.set_epsilon(1e-4)
+
 '''  Parameters '''
 folder_path = 'model_results_fb_global_center'
 use_center_loss = True
@@ -105,7 +108,7 @@ def train(X_list, y, train_indices, val_indices, subject):
 
     cb = [callbacks.ProgbarLogger(count_mode='steps'),
           callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=5,min_lr=0.00001),
-          callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_l2_loss_loss',verbose=0,
+          callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_loss',verbose=0,
                                     save_best_only=True, period=1),
           callbacks.EarlyStopping(patience=early_stopping, monitor='val_l2_loss_loss')]
 
@@ -135,7 +138,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     # Multi-class Classification
     model_name = 'A0{:d}_model'.format(subject)
     model = load_model('./{}/{}.hdf5'.format(folder_path, model_name),
-                custom_objects={'<lambda>': lambda true, pred: pred, 'tf': tf})
+        custom_objects={'<lambda>': lambda true, pred: pred, 'tf': tf})
 
     test_generator = DataGenerator(X_list, y_test, X_indices, **params)
     y_pred = model.predict_generator(
