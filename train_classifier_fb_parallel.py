@@ -20,10 +20,10 @@ import read_bci_data_fb
 folder_path = 'model_results_fb_parallel'
 use_center_loss = False
 use_contrastive_center_loss = False
-batch_size = 512
+batch_size = 400
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 500
-early_stopping = 10
+early_stopping = 20
 
 '''
 Training model for classification of EEG samples into motor imagery classes
