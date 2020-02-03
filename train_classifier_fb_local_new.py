@@ -21,7 +21,7 @@ folder_path = 'model_results_fb_local'
 batch_size = 512
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 500
-early_stopping = 50
+early_stopping = 5
 
 '''
 Training model for classification of EEG samples into motor imagery classes
@@ -73,7 +73,7 @@ def train(X_list, y, train_indices, val_indices, subject):
           callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=5,min_lr=0.00001),
           callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_loss',verbose=0,
                                     save_best_only=True, period=1),
-          callbacks.EarlyStopping(patience=early_stopping, monitor='val_accuracy')]
+          callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss')]
     model.summary()
     model.fit_generator(
         generator=training_generator,
