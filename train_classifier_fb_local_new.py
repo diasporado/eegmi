@@ -18,21 +18,24 @@ import read_bci_data_fb
 
 '''  Parameters '''
 folder_path = 'model_results_fb_local'
-batch_size = 64
+batch_size = 512
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 500
-early_stopping = 5
+early_stopping = 50
 
 '''
 Training model for classification of EEG samples into motor imagery classes
 '''
 
 def layers(inputs, params=None):
-    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
+    pipe = Conv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(inputs)
+    pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
-    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(pipe)
+    pipe = Conv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid',)(pipe)
+    pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
+    pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Reshape((pipe.shape[1].value, 64))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
@@ -70,7 +73,7 @@ def train(X_list, y, train_indices, val_indices, subject):
           callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=5,min_lr=0.00001),
           callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_loss',verbose=0,
                                     save_best_only=True, period=1),
-          callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss')]
+          callbacks.EarlyStopping(patience=early_stopping, monitor='val_accuracy')]
     model.summary()
     model.fit_generator(
         generator=training_generator,
@@ -151,7 +154,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
                     for i in range(len(subjects_test))]
 
     # Iterate training and test on each subject separately
-    for i in range(1,9,1):
+    for i in range(9):
         train_index = subj_train_order[i] 
         test_index = subj_test_order[i]
         np.random.seed(123)
