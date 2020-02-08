@@ -50,13 +50,13 @@ def build_crops(X, increment):
         if tmaximum > 1000:
             break
 
-    tmaximum = 501
-    tminimum = 1
-    while (tmaximum<=1000):
+    tmaximum = 503
+    tminimum = 3
+    while (tmaximum<=1002):
         X_list.append(X[:,tminimum:tmaximum][:,::samplingfreq])
         tminimum=tminimum+increment
         tmaximum=tmaximum+increment
-        if tmaximum > 1000:
+        if tmaximum > 1002:
             break
 
     return X_list
