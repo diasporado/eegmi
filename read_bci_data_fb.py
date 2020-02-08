@@ -36,7 +36,7 @@ def load_raw(training=False):
 
 def raw_to_data(raw_edf, training=True, drop_rejects=True, subj=None):
 
-    tmin, tmax = 0, 4.
+    tmin, tmax = 0, 4.1
 
     stim_code = dict([(32766,1),(769,2), (770,3), (771,4), (772,5),(783,6),(276,7),(277,8),(768,9),
                       (1023,10),(1072,11)])
