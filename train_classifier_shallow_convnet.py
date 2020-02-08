@@ -30,7 +30,7 @@ def layers(inputs):
     pipe = Reshape((pipe.shape[1].value, pipe.shape[4].value, 1))(pipe)
     pipe = Convolution2D(40, (1,22*40), strides=(1,1))(pipe)
     pipe = BatchNormalization(momentum=0.1)(pipe)
-    pipe = Activation('square')(pipe)
+    pipe = Activation('elu')(pipe)
     pipe = Reshape((pipe.shape[1].value, 40))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
     pipe = Activation('log')(pipe)
