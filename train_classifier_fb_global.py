@@ -29,7 +29,7 @@ Training model for classification of EEG samples into motor imagery classes
 '''
 
 def transpose(x):
-    return np.transpose(x, (0,1,3,2))
+    return tf.transpose(x, perm=[0,1,3,2])
 
 def output_of_lambda(input_shape):
     return (input_shape[0], input_shape[1], input_shape[3], input_shape[2])
