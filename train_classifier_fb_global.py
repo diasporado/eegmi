@@ -62,7 +62,7 @@ def train(X_list, y, train_indices, val_indices, subject):
     activation = 'softmax'
 
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
-    pipeline = layers(inputs)
+    pipeline = layers(inputs, params)
     output = Dense(output_dim, activation=activation)(pipeline)
     model = Model(inputs=inputs, outputs=output)
 
