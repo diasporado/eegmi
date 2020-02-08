@@ -17,32 +17,11 @@ from DepthwiseConv3D import DepthwiseConv3D
 from keras import backend as K
 from keras.utils.generic_utils import get_custom_objects
 
-from methods import build_crops
+from methods import build_crops, square, Square, Log, safe_log
 from DataGenerator import DataGenerator
 import read_bci_data_shallow_convnet
 
-''' Custom Activation Function '''
-def square(x):
-    return x * x
-
-class Square(Activation):
-    
-    def __init__(self, activation, **kwargs):
-        super(Square, self).__init__(activation, **kwargs)
-        self.__name__ = 'square'
-
 get_custom_objects().update({'square': Square(square)})
-
-def safe_log(x, eps=1e-6):
-    """ Prevents :math:`log(0)` by using :math:`log(max(x, eps))`."""
-    return tf.log(tf.clip_by_value(x, clip_value_min=eps, clip_value_max=100))
-
-class Log(Activation):
-    
-    def __init__(self, activation, **kwargs):
-        super(Log, self).__init__(activation, **kwargs)
-        self.__name__ = 'log'
-
 get_custom_objects().update({'log': Log(safe_log)})
     
 def layers(inputs):

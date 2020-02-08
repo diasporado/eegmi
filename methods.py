@@ -1,5 +1,27 @@
 from keras.layers import Dense, multiply, GlobalAveragePooling1D
 import numpy as np
+import tensorflow as tf
+
+
+''' Custom Activation Function '''
+def square(x):
+    return x * x
+
+class Square(Activation):
+    
+    def __init__(self, activation, **kwargs):
+        super(Square, self).__init__(activation, **kwargs)
+        self.__name__ = 'square'
+
+def safe_log(x, eps=1e-6):
+    """ Prevents :math:`log(0)` by using :math:`log(max(x, eps))`."""
+    return tf.log(tf.clip_by_value(x, clip_value_min=eps, clip_value_max=100))
+
+class Log(Activation):
+    
+    def __init__(self, activation, **kwargs):
+        super(Log, self).__init__(activation, **kwargs)
+        self.__name__ = 'log'
 
 def se_block(input_tensor, compress_rate = 4):
     num_channels = int(input_tensor.shape[-1]) # Tensorflow backend
