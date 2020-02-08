@@ -28,16 +28,14 @@ Training model for classification of EEG samples into motor imagery classes
 '''
 
 def layers(inputs, params=None):
-    # pipe = DepthwiseConv3D(kernel_size=(1,6,7), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
-    pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
+    pipe = DepthwiseConv3D(kernel_size=(1,6,7), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
+    # pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe = BatchNormalization()(pipe)
-    pipe = Activation('tanh')(pipe)
     # pipe = LeakyReLU(alpha=0.05)(pipe)
-    pipe = Reshape((pipe.shape[1].value, 64))(pipe)
-    # pipe = Reshape((pipe.shape[1].value, 9, 64))(pipe)
-    # pipe = DepthwiseConv2D(kernel_size=(1,9), strides=(1,1), depth_multiplier=1, padding='valid')(pipe)
-    # pipe = LeakyReLU(alpha=0.05)(pipe)
-    # pipe = Activation('tanh')(pipe)
+    # pipe = Reshape((pipe.shape[1].value, 64))(pipe)
+    pipe = Reshape((pipe.shape[1].value, 9, 64))(pipe)
+    pipe = DepthwiseConv2D(kernel_size=(1,9), strides=(1,1), depth_multiplier=1, padding='valid')(pipe)
+    pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
     pipe = Flatten()(pipe)
     return pipe
@@ -171,7 +169,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
         
         tf.reset_default_graph()
         with tf.Session() as sess:
-            # train(X_list, y, train_indices, val_indices, i+1)
+            train(X_list, y, train_indices, val_indices, i+1)
             del(X)
             del(y)
             del(X_list)
