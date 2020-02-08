@@ -38,7 +38,7 @@ def layers(inputs, params=None):
     pipe = DepthwiseConv3D(kernel_size=(1,6,7), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
     # pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe = BatchNormalization()(pipe)
-    # pipe = LeakyReLU(alpha=0.05)(pipe)
+    pipe = LeakyReLU(alpha=0.05)(pipe)
     # pipe = Reshape((pipe.shape[1].value, 64))(pipe)
     pipe = Reshape((pipe.shape[1].value, 576, 1))(pipe)
     # pipe = Lambda(transpose, output_shape=output_of_lambda)(pipe)
