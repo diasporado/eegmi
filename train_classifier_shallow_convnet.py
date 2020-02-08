@@ -22,11 +22,7 @@ import read_bci_data_shallow_convnet
 
 ''' Custom Activation Function '''
 def square(x):
-    orig = x
-    x = tf.where(orig >2.0, (tf.ones_like(x)) , x)
-    x = tf.where(tf.logical_and(0.0 <= orig, orig <=2.0), (x - tf.square(x)/4.), x)
-    x = tf.where(tf.logical_and(-2.0 <= orig, orig < 0), (x + tf.square(x)/4.), x)
-    return tf.where(orig < -2.0, -tf.ones_like(x), x)
+    return x * x
 
 get_custom_objects().update({'square': Activation(square)})
     
@@ -34,12 +30,12 @@ def layers(inputs):
     pipe = Reshape((inputs.shape[1].value, inputs.shape[2].value, 1))(inputs)
     pipe = DepthwiseConv2D(kernel_size=(25, 1), strides=(2, 1), depth_multiplier=40)(pipe)
     pipe = Reshape((pipe.shape[1].value, pipe.shape[2].value, pipe.shape[3].value, 1))(pipe)
-    pipe = Dropout(0.5)(pipe)
     pipe = Conv3D(40, (1,22,40), strides=(1,1,1))(pipe)
-    pipe = BatchNormalization()(pipe)
-    pipe = Activation('elu')(pipe)
+    pipe = BatchNormalization(momentum=0.1)(pipe)
+    pipe = Activation(square, name='square')(pipe)
     pipe = Reshape((pipe.shape[1].value, 40))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
+    pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
     return pipe
 
