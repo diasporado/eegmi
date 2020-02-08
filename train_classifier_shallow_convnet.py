@@ -25,13 +25,13 @@ import read_bci_data_shallow_convnet
 def square(x):
     return x * x
 
-get_custom_objects().update({'square': Activation(square)})
+get_custom_objects().update({'square': Activation(square, name='square')})
 
 def safe_log(x, eps=1e-6):
     """ Prevents :math:`log(0)` by using :math:`log(max(x, eps))`."""
     return tf.log(tf.clip_by_value(x, clip_value_min=eps, clip_value_max=100))
 
-get_custom_objects().update({'log': Activation(safe_log)})
+get_custom_objects().update({'log': Activation(safe_log, name='log')})
     
 def layers(inputs):
     pipe = Reshape((inputs.shape[1].value, inputs.shape[2].value, 1, 1))(inputs)
@@ -40,10 +40,10 @@ def layers(inputs):
     pipe = Reshape((pipe.shape[1].value, pipe.shape[2].value, pipe.shape[4].value, 1))(pipe)
     pipe = Conv3D(40, (1,22,40), strides=(1,1,1))(pipe)
     pipe = BatchNormalization(momentum=0.1)(pipe)
-    pipe = Activation('square', name='square')(pipe)
+    pipe = Activation('square')(pipe)
     pipe = Reshape((pipe.shape[1].value, 40))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
-    pipe = Activation('log', name='log')(pipe)
+    pipe = Activation('log')(pipe)
     pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
     return pipe
