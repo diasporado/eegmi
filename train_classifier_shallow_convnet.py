@@ -25,6 +25,12 @@ def square(x):
     return x * x
 
 get_custom_objects().update({'square': Activation(square)})
+
+def safe_log(x, eps=1e-6):
+    """ Prevents :math:`log(0)` by using :math:`log(max(x, eps))`."""
+    return tf.log(tf.clip_by_value(x, clip_value_min=eps))
+
+get_custom_objects().update({'log': Activation(safe_log)})
     
 def layers(inputs):
     pipe = Reshape((inputs.shape[1].value, inputs.shape[2].value, 1))(inputs)
@@ -35,6 +41,7 @@ def layers(inputs):
     pipe = Activation('square')(pipe)
     pipe = Reshape((pipe.shape[1].value, 40))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
+    pipe = Activation('log')(pipe)
     pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
     return pipe
