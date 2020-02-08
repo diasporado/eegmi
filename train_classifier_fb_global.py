@@ -13,7 +13,7 @@ from keras.layers import Dense,BatchNormalization,AveragePooling2D,MaxPooling2D,
 from keras import optimizers, callbacks, backend as K
 
 from DepthwiseConv3D import DepthwiseConv3D
-from methods import se_block, build_crops
+from methods import se_block, build_crops, square, Square, Log, safe_log
 from DataGenerator import DataGenerator
 import read_bci_data_fb
 
@@ -21,31 +21,23 @@ import read_bci_data_fb
 folder_path = 'model_results_fb_global'
 batch_size = 512
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 500
+n_epoch = 100
 early_stopping = 15
 
 '''
 Training model for classification of EEG samples into motor imagery classes
 '''
 
-def transpose(x):
-    return tf.transpose(x, perm=[0,1,3,2])
-
-def output_of_lambda(input_shape):
-    return (input_shape[0], input_shape[1], input_shape[3], input_shape[2])
-
+get_custom_objects().update({'square': Square(square)})
+get_custom_objects().update({'log': Log(safe_log)})
+    
 def layers(inputs, params=None):
-    pipe = DepthwiseConv3D(kernel_size=(1,6,7), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
-    # pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
+    pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe = BatchNormalization()(pipe)
-    pipe = LeakyReLU(alpha=0.05)(pipe)
-    # pipe = Reshape((pipe.shape[1].value, 64))(pipe)
-    pipe = Reshape((pipe.shape[1].value, 576, 1))(pipe)
-    # pipe = Lambda(transpose, output_shape=output_of_lambda)(pipe)
-    pipe = Convolution2D(64, (1,576), strides=(1,1), padding='valid')(pipe)
-    pipe = LeakyReLU(alpha=0.05)(pipe)
+    pipe = Activation('square')(pipe)
     pipe = Reshape((pipe.shape[1].value, 64))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
+    pipe = Activation('log')(pipe)
     pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
     return pipe
@@ -167,7 +159,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
         test_index = subj_test_order[i]
         np.random.seed(123)
         X, y = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
-        X_list = build_crops(X, increment=5)
+        X_list = build_crops(X, increment=2)
         X_indices = []
         crops = len(X_list)
         trials = len(X_list[0])
@@ -185,7 +177,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
             del(X_list)
             gc.collect()
             X_test, y_test = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
-            X_list = build_crops(X_test, increment=5)
+            X_list = build_crops(X_test, increment=2)
             X_indices = []
             crops = len(X_list)
             trials = len(X_list[0])
