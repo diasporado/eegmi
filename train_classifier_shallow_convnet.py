@@ -13,6 +13,7 @@ from keras.utils import np_utils
 from keras import optimizers, callbacks
 
 # Custom activation function
+from DepthwiseConv3D import DepthwiseConv3D
 from keras import backend as K
 from keras.utils.generic_utils import get_custom_objects
 
@@ -33,8 +34,8 @@ def safe_log(x, eps=1e-6):
 get_custom_objects().update({'log': Activation(safe_log)})
     
 def layers(inputs):
-    pipe = Reshape((inputs.shape[1].value, inputs.shape[2].value, 1))(inputs)
-    pipe = DepthwiseConv2D(kernel_size=(25, 1), strides=(2, 1), depth_multiplier=40)(pipe)
+    pipe = Reshape((inputs.shape[1].value, inputs.shape[2].value, 1, 1))(inputs)
+    pipe = DepthwiseConv3D(kernel_size=(25,1,1), strides=(2,1,1), depth_multiplier=40, groups=1)(pipe)
     pipe = Reshape((pipe.shape[1].value, pipe.shape[2].value, pipe.shape[3].value, 1))(pipe)
     pipe = Conv3D(40, (1,22,40), strides=(1,1,1))(pipe)
     pipe = BatchNormalization(momentum=0.1)(pipe)
