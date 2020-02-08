@@ -18,6 +18,8 @@ from methods import se_block, build_crops, square, Square, Log, safe_log
 from DataGenerator import DataGenerator
 import read_bci_data_fb
 
+from braindecode.visualization.perturbation import compute_amplitude_prediction_correlations
+
 '''  Parameters '''
 folder_path = 'model_results_fb_global'
 batch_size = 512
@@ -108,11 +110,16 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     output = Dense(output_dim, activation='softmax')(pipeline)
     model = Model(inputs=inputs, outputs=output)
     model.load_weights('./{}/{}.hdf5'.format(folder_path, model_name))
+    
+    model.layers.pop()
+    model.summary()
 
     test_generator = DataGenerator(X_list, y_test, X_indices, **params)
     y_pred = model.predict_generator(
         generator=test_generator, verbose=1,
         use_multiprocessing=False, workers=4)
+    
+    amp_pred_corrs = compute_amplitude_prediction_correlations(pred_fn, train_X_batches, n_iterations=12, batch_size=30)
 
     Y_preds = np.argmax(y_pred, axis=1).reshape(crops, trials)
     Y_preds = np.transpose(Y_preds)
@@ -172,7 +179,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
         
         tf.reset_default_graph()
         with tf.Session() as sess:
-            train(X_list, y, train_indices, val_indices, i+1)
+            # train(X_list, y, train_indices, val_indices, i+1)
             del(X)
             del(y)
             del(X_list)
