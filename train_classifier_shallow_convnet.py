@@ -28,7 +28,7 @@ get_custom_objects().update({'square': Activation(square)})
 
 def safe_log(x, eps=1e-6):
     """ Prevents :math:`log(0)` by using :math:`log(max(x, eps))`."""
-    return tf.log(tf.clip_by_value(x, clip_value_min=eps))
+    return tf.log(tf.clip_by_value(x, clip_value_min=eps, clip_value_max=100))
 
 get_custom_objects().update({'log': Activation(safe_log)})
     
