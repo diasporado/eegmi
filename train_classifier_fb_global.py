@@ -13,6 +13,7 @@ from keras.layers import Dense,BatchNormalization,AveragePooling2D,MaxPooling2D,
 from keras import optimizers, callbacks, backend as K
 
 from DepthwiseConv3D import DepthwiseConv3D
+from keras.utils.generic_utils import get_custom_objects
 from methods import se_block, build_crops, square, Square, Log, safe_log
 from DataGenerator import DataGenerator
 import read_bci_data_fb
