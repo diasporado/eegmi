@@ -8,7 +8,7 @@ import tensorflow as tf
 from keras.models import Model, Sequential, load_model
 from keras.layers import Dense,BatchNormalization,AveragePooling2D,MaxPooling2D,MaxPooling3D, \
     Convolution2D,Activation,Flatten,Dropout,Convolution1D,Reshape,Conv3D,TimeDistributed,LSTM,AveragePooling3D, \
-    Input, AveragePooling3D, MaxPooling3D, concatenate, LeakyReLU, AveragePooling1D
+    Input, AveragePooling3D, MaxPooling3D, concatenate, LeakyReLU, AveragePooling1D, DepthwiseConv2D
 from keras import optimizers, callbacks, backend as K
 
 from DepthwiseConv3D import DepthwiseConv3D
@@ -21,19 +21,23 @@ folder_path = 'model_results_fb_global'
 batch_size = 512
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 500
-early_stopping = 15
+early_stopping = 5
 
 '''
 Training model for classification of EEG samples into motor imagery classes
 '''
 
 def layers(inputs, params=None):
-    # pipe = DepthwiseConv3D(kernel_size=(1,6,7), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
-    pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
+    pipe = DepthwiseConv3D(kernel_size=(1,6,7), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
+    # pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe = BatchNormalization()(pipe)
-    pipe = Activation('tanh')(pipe)
+    # pipe = Activation('tanh')(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
-    pipe = Reshape((pipe.shape[1].value, 64))(pipe)
+    # pipe = Reshape((pipe.shape[1].value, 64))(pipe)
+    pipe = Reshape((pipe.shape[1].value, 9, 64))(pipe)
+    pipe = DepthwiseConv2D(kernel_size=(1,9), strides=(1,1), depth_multiplier=1, padding='valid')(pipe)
+    pipe = LeakyReLU(alpha=0.05)(pipe)
+    # pipe = Activation('tanh')(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
     pipe = Flatten()(pipe)
     return pipe
@@ -97,7 +101,12 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     
     # Multi-class Classification
     model_name = 'A0{:d}_model'.format(subject)
-    model = load_model('./{}/{}.hdf5'.format(folder_path, model_name))
+    output_dim = params['n_classes']
+    inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
+    pipeline = layers(inputs, params)
+    output = Dense(output_dim, activation='softmax')(pipeline)
+    model = Model(inputs=inputs, outputs=output)
+    model.load_weights('./{}/{}.hdf5'.format(folder_path, model_name))
 
     test_generator = DataGenerator(X_list, y_test, X_indices, **params)
     y_pred = model.predict_generator(
