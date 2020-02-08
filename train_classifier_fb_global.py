@@ -35,7 +35,7 @@ get_custom_objects().update({'log': Log(safe_log)})
 def layers(inputs, params=None):
     pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe = BatchNormalization()(pipe)
-    pipe = Activation('square')(pipe)
+    pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Reshape((pipe.shape[1].value, 64))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
     pipe = Activation('log')(pipe)
