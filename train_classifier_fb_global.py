@@ -5,6 +5,7 @@ from sklearn.model_selection import train_test_split
 import gc
 import tensorflow as tf
 
+from keras import backend as K
 from keras.models import Model, Sequential, load_model
 from keras.layers import Dense,BatchNormalization,AveragePooling2D,MaxPooling2D,MaxPooling3D, \
     Convolution2D,Activation,Flatten,Dropout,Convolution1D,Reshape,Conv3D,TimeDistributed,LSTM,AveragePooling3D, \
@@ -27,13 +28,17 @@ early_stopping = 5
 Training model for classification of EEG samples into motor imagery classes
 '''
 
+def transpose(x, shape):
+    return np.transpose(x, shape)
+
 def layers(inputs, params=None):
     pipe = DepthwiseConv3D(kernel_size=(1,6,7), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
     # pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe = BatchNormalization()(pipe)
     # pipe = LeakyReLU(alpha=0.05)(pipe)
     # pipe = Reshape((pipe.shape[1].value, 64))(pipe)
-    pipe = Reshape((pipe.shape[1].value, 9, 64))(pipe)
+    pipe = Reshape((pipe.shape[1].value, 64, 9))(pipe)
+    pipe = transpose(x, (0,1,3,2))(pipe)
     pipe = DepthwiseConv2D(kernel_size=(1,9), strides=(1,1), depth_multiplier=1, padding='valid')(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Reshape((pipe.shape[1].value, 64))(pipe)
