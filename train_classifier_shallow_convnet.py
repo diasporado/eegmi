@@ -26,7 +26,7 @@ get_custom_objects().update({'log': Log(safe_log)})
     
 def layers(inputs):
     pipe = Reshape((inputs.shape[1].value, inputs.shape[2].value, 1))(inputs)
-    pipe = Convolution2D(kernel_size=(25,1), strides=(2,1))(pipe)
+    pipe = Convolution2D(40, (25,1), strides=(2,1))(pipe)
     pipe = Reshape((pipe.shape[1].value, pipe.shape[2].value, pipe.shape[3].value, 1))(pipe)
     pipe = Convolution3D(40, (1,22,40), strides=(1,1,1))(pipe)
     pipe = BatchNormalization(momentum=0.9)(pipe)
