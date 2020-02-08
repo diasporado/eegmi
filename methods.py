@@ -1,4 +1,4 @@
-from keras.layers import Dense, multiply, GlobalAveragePooling1D
+from keras.layers import Dense, multiply, GlobalAveragePooling1D, Activation
 import numpy as np
 import tensorflow as tf
 
