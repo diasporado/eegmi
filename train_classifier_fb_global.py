@@ -7,7 +7,7 @@ import tensorflow as tf
 
 from keras import backend as K
 from keras.models import Model, Sequential, load_model
-from keras.layers import Dense,BatchNormalization,AveragePooling2D,MaxPooling2D,MaxPooling3D,Lambda,
+from keras.layers import Dense,BatchNormalization,AveragePooling2D,MaxPooling2D,MaxPooling3D,Lambda, \
     Convolution2D,Activation,Flatten,Dropout,Convolution1D,Reshape,Conv3D,TimeDistributed,LSTM,AveragePooling3D, \
     Input, AveragePooling3D, MaxPooling3D, concatenate, LeakyReLU, AveragePooling1D, DepthwiseConv2D
 from keras import optimizers, callbacks, backend as K
