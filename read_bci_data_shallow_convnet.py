@@ -127,7 +127,7 @@ def raw_to_data(raw_edf, training=False, drop_rejects=True, subj=None):
         oScaler = pk.load(open("./shallow_convnet/subject{}_oscaler.pk".format(subjects[subj]),'rb'))
         
     y = epochs.events[:, 2] - 2
-    X = oScaler.transform(X.flatten().reshape(-1,1))
+    # X = oScaler.transform(X.flatten().reshape(-1,1))
     X = X.reshape(X_shape)
 
     if training:
