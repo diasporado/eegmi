@@ -42,8 +42,8 @@ def layers(inputs):
 folder_path = 'model_results_shallow_convnet'
 batch_size = 512
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 50
-early_stopping = 15
+n_epoch = 80
+early_stopping = 10
 
 '''
 Training model for classification of EEG samples into motor imagery classes
@@ -166,7 +166,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
         test_index = subj_test_order[i]
         np.random.seed(123)
         X, y = read_bci_data_shallow_convnet.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
-        X_list = build_crops(X, increment=2)
+        X_list = build_crops(X, increment=5)
         X_indices = []
         crops = len(X_list)
         trials = len(X_list[0])
@@ -184,7 +184,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
             del(X_list)
             gc.collect()
             X_test, y_test = read_bci_data_shallow_convnet.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
-            X_list = build_crops(X_test, increment=2)
+            X_list = build_crops(X_test, increment=5)
             X_indices = []
             crops = len(X_list)
             trials = len(X_list[0])
