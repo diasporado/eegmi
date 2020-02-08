@@ -11,6 +11,7 @@ from keras.layers import Dense,BatchNormalization,AveragePooling2D,MaxPooling2D,
     Input, AveragePooling3D, MaxPooling3D, concatenate, LeakyReLU, AveragePooling1D
 from keras import optimizers, callbacks, backend as K
 
+from DepthwiseConv3D import DepthwiseConv3D
 from methods import se_block, build_crops
 from DataGenerator import DataGenerator
 import read_bci_data_fb
@@ -26,9 +27,11 @@ early_stopping = 15
 Training model for classification of EEG samples into motor imagery classes
 '''
 
-def layers(inputs):
+def layers(inputs, params=None):
+    # pipe = DepthwiseConv3D(kernel_size=(1,6,7), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
     pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe = BatchNormalization()(pipe)
+    pipe = Activation('tanh')(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Reshape((pipe.shape[1].value, 64))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
