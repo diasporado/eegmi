@@ -7,7 +7,7 @@ import tensorflow as tf
 
 from keras import backend as K
 from keras.models import Model, Sequential, load_model
-from keras.layers import Dense,BatchNormalization,AveragePooling2D,MaxPooling2D,MaxPooling3D, \
+from keras.layers import Dense,BatchNormalization,AveragePooling2D,MaxPooling2D,MaxPooling3D,Lambda,
     Convolution2D,Activation,Flatten,Dropout,Convolution1D,Reshape,Conv3D,TimeDistributed,LSTM,AveragePooling3D, \
     Input, AveragePooling3D, MaxPooling3D, concatenate, LeakyReLU, AveragePooling1D, DepthwiseConv2D
 from keras import optimizers, callbacks, backend as K
@@ -28,8 +28,11 @@ early_stopping = 5
 Training model for classification of EEG samples into motor imagery classes
 '''
 
-def transpose(x, shape):
-    return np.transpose(x, shape)
+def transpose(x):
+    return np.transpose(x, (0,1,3,2))
+
+def output_of_lambda(input_shape):
+    return (input_shape[0], input_shape[1], input_shape[3], input_shape[2])
 
 def layers(inputs, params=None):
     pipe = DepthwiseConv3D(kernel_size=(1,6,7), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
@@ -38,7 +41,7 @@ def layers(inputs, params=None):
     # pipe = LeakyReLU(alpha=0.05)(pipe)
     # pipe = Reshape((pipe.shape[1].value, 64))(pipe)
     pipe = Reshape((pipe.shape[1].value, 64, 9))(pipe)
-    pipe = transpose(x, (0,1,3,2))(pipe)
+    pipe = Lambda(transpose, output_shape=output_of_lambda)(pipe)
     pipe = DepthwiseConv2D(kernel_size=(1,9), strides=(1,1), depth_multiplier=1, padding='valid')(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Reshape((pipe.shape[1].value, 64))(pipe)
