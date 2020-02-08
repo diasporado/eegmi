@@ -36,6 +36,7 @@ def layers(inputs, params=None):
     pipe = Reshape((pipe.shape[1].value, 9, 64))(pipe)
     pipe = DepthwiseConv2D(kernel_size=(1,9), strides=(1,1), depth_multiplier=1, padding='valid')(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
+    pipe = Reshape((pipe.shape[1].value, 64))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
     pipe = Flatten()(pipe)
     return pipe
