@@ -37,7 +37,7 @@ def layers(inputs):
     pipe = Reshape((inputs.shape[1].value, inputs.shape[2].value, 1, 1))(inputs)
     pipe = DepthwiseConv3D(kernel_size=(25,1,1), strides=(2,1,1), depth_multiplier=40, groups=1)(pipe)
     print(pipe.shape)
-    pipe = Reshape((pipe.shape[1].value, pipe.shape[2].value, pipe.shape[3].value, 1))(pipe)
+    pipe = Reshape((pipe.shape[1].value, pipe.shape[2].value, pipe.shape[4].value, 1))(pipe)
     pipe = Conv3D(40, (1,22,40), strides=(1,1,1))(pipe)
     pipe = BatchNormalization(momentum=0.1)(pipe)
     pipe = Activation('square')(pipe)
