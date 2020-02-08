@@ -42,7 +42,7 @@ def layers(inputs, params=None):
     # pipe = Reshape((pipe.shape[1].value, 64))(pipe)
     pipe = Reshape((pipe.shape[1].value, 576, 1))(pipe)
     # pipe = Lambda(transpose, output_shape=output_of_lambda)(pipe)
-    pipe = Conv2D(64, (1,576), strides=(1,1), padding='valid')(pipe)
+    pipe = Convolution2D(64, (1,576), strides=(1,1), padding='valid')(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Reshape((pipe.shape[1].value, 64))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
