@@ -29,7 +29,7 @@ Training model for classification of EEG samples into motor imagery classes
 
 def layers(inputs, params=None):
     pipe = Conv3D(64, (1,4,4), strides=(1,1,1), padding='valid')(inputs)
-    # pipe = BatchNormalization()(pipe)
+    pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
     # pipe = BatchNormalization()(pipe)
@@ -42,7 +42,7 @@ def layers(inputs, params=None):
     # pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
     # pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
-    # pipe = Dropout(0.5)(pipe)
+    pipe = Dropout(0.5)(pipe)
     pipe = Reshape((pipe.shape[1].value, 64))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
     pipe = Flatten()(pipe)
