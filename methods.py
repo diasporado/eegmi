@@ -80,9 +80,10 @@ vis_positions = np.array(vis_positions)
 
 def plot_mne_vis(amp_pred_corrs, title=None):
     fig, axes = plt.subplots(9, 4)
-    fig.suptitle(title, fontsize=24)
+    st = fig.suptitle(title, fontsize=24)
     fig.set_size_inches(10,24)
-    plt.subplots_adjust(top=0.9)
+    st.set_y(0.95)
+    plt.subplots_adjust(top=0.5)
     for ax, row in zip(axes[:,0], freq_bands):
         ax.set_ylabel(row, rotation=90, size='large')
     for i in range(len(amp_pred_corrs)):

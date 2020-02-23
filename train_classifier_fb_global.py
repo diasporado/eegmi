@@ -177,8 +177,9 @@ def build_correlation_map_single(X_list, subject, epochs):
     model.summary()
     
     X_list = np.array(X_list)
-    X_list = X_list.reshape(X_list.shape[0]*X_list.shape[1], X_list.shape[2], X_list.shape[3] * X_list.shape[4] * X_list.shape[5], 1)
-    X_list = X_list.transpose(0, 2, 1, 3)
+    X_list = X_list.reshape(X_list.shape[0]*X_list.shape[1], X_list.shape[2], X_list.shape[3], X_list.shape[4], X_list.shape[5], 1)
+    X_list = X_list.transpose(0, 2, 3, 4, 1, 5)
+    X_list = X_list.reshape(X_list.shape[0], X_list.shape[1] * X_list.shape[2] * X_list.shape[3], X_list.shape[4], 1)
     print(X_list.shape)
 
     def pred_fn(x):
