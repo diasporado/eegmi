@@ -11,16 +11,16 @@ from keras.layers import Dense,BatchNormalization,AveragePooling2D,MaxPooling2D,
     Input, AveragePooling3D, MaxPooling3D, concatenate, LeakyReLU, AveragePooling1D
 from keras import optimizers, callbacks
 
-from methods import se_block, build_crops
+from methods import build_crops
 from DataGenerator import DataGenerator
 import read_bci_data_fb
 
 '''  Parameters '''
 folder_path = 'model_results_fb_local'
-batch_size = 64
+batch_size = 512
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 500
-early_stopping = 15
+early_stopping = 50
 
 '''
 Training model for classification of EEG samples into motor imagery classes
@@ -57,10 +57,8 @@ def train(X_list, y, train_indices, val_indices, subject):
     
     def layers(inputs):
         pipe = Conv3D(64, (1,3,3), strides=(1,1,1), padding='valid')(inputs)
-        pipe = BatchNormalization()(pipe)
         pipe = LeakyReLU(alpha=0.05)(pipe)
         pipe = Conv3D(64, (1,3,3), strides=(1,1,1), padding='valid')(pipe)
-        pipe = BatchNormalization()(pipe)
         pipe = LeakyReLU(alpha=0.05)(pipe)
         pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
         pipe = BatchNormalization()(pipe)
@@ -85,7 +83,7 @@ def train(X_list, y, train_indices, val_indices, subject):
           callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=5,min_lr=0.00001),
           callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_loss',verbose=0,
                                     save_best_only=True, period=1),
-          callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss')]
+          callbacks.EarlyStopping(patience=early_stopping, monitor='val_accuracy')]
     model.summary()
     model.fit_generator(
         generator=training_generator,

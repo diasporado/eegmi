@@ -14,16 +14,24 @@ from keras import optimizers, callbacks, backend as K
 
 from DepthwiseConv3D import DepthwiseConv3D
 from keras.utils.generic_utils import get_custom_objects
-from methods import se_block, build_crops, square, Square, Log, safe_log
+from methods import se_block, build_crops, square, Square, Log, safe_log, plot_mne_vis
 from DataGenerator import DataGenerator
 import read_bci_data_fb
 
+import mne
+from braindecode.datasets.sensor_positions import get_channelpos, CHANNEL_10_20_APPROX
 from braindecode.visualization.perturbation import compute_amplitude_prediction_correlations
+
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from matplotlib import cm
 
 '''  Parameters '''
 folder_path = 'model_results_fb_global'
 batch_size = 512
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
+channel_indices = [3,8,9,10,11,12,14,15,16,17,18,19,20,22,23,24,25,26,30,31,32,38]
 n_epoch = 100
 early_stopping = 10
 
@@ -38,22 +46,22 @@ def layers(inputs, params=None):
     pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
+    pipe = Dropout(0.5)(pipe)
     pipe = Reshape((pipe.shape[1].value, 64))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
-    pipe = Activation('log')(pipe)
-    pipe = Dropout(0.5)(pipe)
+    # pipe = Activation('log')(pipe)
     pipe = Flatten()(pipe)
     return pipe
 
 
-def train(X_list, y, train_indices, val_indices, subject):
+def train_single_subj(X_list, y, train_indices, val_indices, subject):
     
     X_shape = X_list[0].shape # (273, 250, 6, 7, 9)
 
     params = {
         'dim': (X_shape[1], X_shape[2], X_shape[3]),
         'batch_size': batch_size,
-        'n_classes': len(np.unique(y)),
+        'n_classes': 4,
         'n_channels': 9,
         'shuffle': True
     }
@@ -86,7 +94,7 @@ def train(X_list, y, train_indices, val_indices, subject):
         workers=4, epochs=n_epoch, verbose=1, callbacks=cb)
 
 
-def evaluate_model(X_list, y_test, X_indices, subject):
+def evaluate_single_subj(X_list, y_test, X_indices, subject):
 
     X_shape = X_list[0].shape # (273, 250, 6, 7, 9)
     trials = X_shape[0]
@@ -94,14 +102,14 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     params = {
         'dim': (X_shape[1], X_shape[2], X_shape[3]),
         'batch_size': trials,
-        'n_classes': len(np.unique(y_test)),
+        'n_classes': 4,
         'n_channels': 9,
         'shuffle': False
     }
 
     actual = [ all_classes[i] for i in y_test ]
     predicted = []
-    
+
     # Multi-class Classification
     model_name = 'A0{:d}_model'.format(subject)
     output_dim = params['n_classes']
@@ -110,17 +118,12 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     output = Dense(output_dim, activation='softmax')(pipeline)
     model = Model(inputs=inputs, outputs=output)
     model.load_weights('./{}/{}.hdf5'.format(folder_path, model_name))
-    
-    model.layers.pop()
     model.summary()
 
     test_generator = DataGenerator(X_list, y_test, X_indices, **params)
     y_pred = model.predict_generator(
         generator=test_generator, verbose=1,
         use_multiprocessing=False, workers=4)
-    
-    amp_pred_corrs = compute_amplitude_prediction_correlations(pred_fn, train_X_batches, n_iterations=12, batch_size=30)
-
     Y_preds = np.argmax(y_pred, axis=1).reshape(crops, trials)
     Y_preds = np.transpose(Y_preds)
     
@@ -149,25 +152,64 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     print(metrics.classification_report(actual,predicted))
     print('kappa value: {}'.format(kappa_score))
 
-if __name__ == '__main__': # if this file is been run directly by Python
+
+''' Builds Input‐perturbation network‐prediction correlation map for a single subject '''
+def build_correlation_map_single(X_list, subject, epochs):
+
+    X_shape = X_list[0].shape # (273, 250, 6, 7, 9)
+    trials = X_shape[0]
+    params = {
+        'dim': (X_shape[1], X_shape[2], X_shape[3]),
+        'batch_size': trials,
+        'n_classes': 4,
+        'n_channels': 9,
+        'shuffle': False
+    }
     
-    # load bci competition data set
+    # Multi-class Classification
+    model_name = 'A0{:d}_model'.format(subject)
+    output_dim = params['n_classes']
+    inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
+    pipeline = layers(inputs, params)
+    output = Dense(output_dim)(pipeline)
+    model = Model(inputs=inputs, outputs=output)
+    model.load_weights('./{}/{}.hdf5'.format(folder_path, model_name))
+    model.summary()
     
+    X_list = np.array(X_list)
+    X_list = X_list.reshape(X_list.shape[0]*X_list.shape[1], X_list.shape[2], X_list.shape[3] * X_list.shape[4] * X_list.shape[5], 1)
+    X_list = X_list.transpose(0, 2, 1, 3)
+    print(X_list.shape)
+
+    def pred_fn(x):
+        x = x.transpose(0, 2, 1, 3)
+        x = x.reshape(x.shape[0], x.shape[1], 6, 7, 9)
+        pred = model.predict(x) # (batch, 4)
+        return pred
+
+    amp_pred_corrs = compute_amplitude_prediction_correlations(lambda x: pred_fn(x), X_list, n_iterations=12, batch_size=trials)
+    print(amp_pred_corrs.shape) # (channels, 126, 4)
+
+    amp_pred_corrs = amp_pred_corrs.reshape(42, 9, amp_pred_corrs.shape[1], amp_pred_corrs.shape[2])
+    amp_pred_corrs = amp_pred_corrs[channel_indices, :]
+    amp_pred_corrs = amp_pred_corrs.transpose(1, 0, 2, 3)
+    print(amp_pred_corrs.shape)
+    
+    return amp_pred_corrs
+
+
+def train():
+    # load bci competition training data set
     raw_edf_train, subjects_train = read_bci_data_fb.load_raw(training=True)
     subj_train_order = [ np.argwhere(np.array(subjects_train)==i+1)[0][0]
                     for i in range(len(subjects_train))]
 
-    raw_edf_test, subjects_test = read_bci_data_fb.load_raw(training=False)
-    subj_test_order = [ np.argwhere(np.array(subjects_test)==i+1)[0][0]
-                    for i in range(len(subjects_test))]
-
-    # Iterate training and test on each subject separately
+    # Iterate training on each subject separately
     for i in range(9):
-        train_index = subj_train_order[i] 
-        test_index = subj_test_order[i]
+        train_index = subj_train_order[i]
         np.random.seed(123)
-        X, y = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
-        X_list = build_crops(X, increment=2)
+        X, y, _ = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
+        X_list = build_crops(X, increment=5)
         X_indices = []
         crops = len(X_list)
         trials = len(X_list[0])
@@ -179,21 +221,78 @@ if __name__ == '__main__': # if this file is been run directly by Python
         
         tf.reset_default_graph()
         with tf.Session() as sess:
-            # train(X_list, y, train_indices, val_indices, i+1)
+            train_single_subj(X_list, y, train_indices, val_indices, i+1)
             del(X)
             del(y)
             del(X_list)
             gc.collect()
-            X_test, y_test = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
-            X_list = build_crops(X_test, increment=2)
-            X_indices = []
-            crops = len(X_list)
-            trials = len(X_list[0])
-            for a in range(crops):
-                for b in range(trials):
-                    X_indices.append((a, b))
-            evaluate_model(X_list, y_test, X_indices, i+1)
+
+
+def evaluate(visualise=False):
+    # load bci competition test data set
+    raw_edf_test, subjects_test = read_bci_data_fb.load_raw(training=False)
+    subj_test_order = [ np.argwhere(np.array(subjects_test)==i+1)[0][0]
+                    for i in range(len(subjects_test))]
+    
+    X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
+    ''' Test Model '''
+    X_list = build_crops(X_test, increment=50)
+    X_indices = []
+    crops = len(X_list)
+    trials = len(X_list[0])
+    for a in range(crops):
+        for b in range(trials):
+            X_indices.append((a, b))
+    
+    # Iterate test on each subject separately
+    amp_pred_corrs_list = []
+    for i in range(9):
+        test_index = subj_test_order[i]
+        np.random.seed(123)
+        tf.reset_default_graph()
+        with tf.Session() as sess:
+            evaluate_single_subj(X_list, y_test, X_indices, i+1)
             del(X_test)
             del(y_test)
             del(X_list)
             gc.collect()
+
+
+def visualise():
+    # load bci competition training data set
+    raw_edf_train, subjects_train = read_bci_data_fb.load_raw(training=True)
+    subj_train_order = [ np.argwhere(np.array(subjects_train)==i+1)[0][0]
+                    for i in range(len(subjects_train))]
+
+    # Iterate training on each subject separately
+    for i in range(9):
+        train_index = subj_train_order[i]
+        np.random.seed(123)
+        X, y, epochs = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
+        X_list = build_crops(X, increment=100)
+        tf.reset_default_graph()
+        with tf.Session() as sess:
+            ''' Visualise Model '''
+            print("Calculating input‐perturbation network‐prediction correlation map...")
+            amp_pred_corrs = build_correlation_map_single(X_list, i+1, epochs)
+            np.save('./np/Subject_A0{}.npy'.format(i+1), amp_pred_corrs)
+            plot_mne_vis(amp_pred_corrs, title="Subject A0{}".format(i+1))
+            del amp_pred_corrs
+            gc.collect()
+    
+    # Compute average across all subjects
+    amp_pred_corrs_list = []
+    for i in range(9):
+        amp_pred_corrs = np.load('./np/Subject_A0{}.npy'.format(i+1))
+        amp_pred_corrs_list.append(amp_pred_corrs)
+    amp_pred_corrs_list = np.concatenate(np.array(amp_pred_corrs_list), axis=2)
+    np.save('./np/Average.npy', amp_pred_corrs_list)
+    print(amp_pred_corrs_list.shape)
+    plot_mne_vis(amp_pred_corrs_list, title="Average Across 9 Subjects")
+
+
+if __name__ == '__main__': # if this file is been run directly by Python
+    
+    # train()
+    # evaluate()
+    visualise()

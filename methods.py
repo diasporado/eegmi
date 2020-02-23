@@ -1,6 +1,18 @@
 from keras.layers import Dense, multiply, GlobalAveragePooling1D, Activation
 import numpy as np
 import tensorflow as tf
+from braindecode.datasets.sensor_positions import get_channelpos, CHANNEL_10_20_APPROX
+import mne
+
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from matplotlib import cm
+
+''' Constants '''
+all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
+ch_names = ['Fz', 'FC3', 'FC1', 'FCz', 'FC2', 'FC4', 'C5', 'C3', 'C1', 'Cz', 'C2', 'C4', 'C6', 'CP3', 'CP1', 'CPz', 'CP2', 'CP4', 'P1', 'Pz', 'P2', 'POz']
+freq_bands = ['4-8Hz', '8-12Hz', '12-16Hz', '16-20Hz', '20-24Hz', '24-28Hz', '28-32Hz', '32-36Hz', '36-40Hz']
 
 
 ''' Custom Activation Function '''
@@ -49,7 +61,7 @@ def build_crops(X, increment):
         tmaximum=tmaximum+increment
         if tmaximum > 1000:
             break
-
+    
     tmaximum = 503
     tminimum = 3
     while (tmaximum<=1002):
@@ -58,5 +70,29 @@ def build_crops(X, increment):
         tmaximum=tmaximum+increment
         if tmaximum > 1002:
             break
-
+    
     return X_list
+
+
+''' Visualisation '''
+vis_positions = [get_channelpos(name, CHANNEL_10_20_APPROX) for name in ch_names]
+vis_positions = np.array(vis_positions)
+
+def plot_mne_vis(amp_pred_corrs, title=None):
+    fig, axes = plt.subplots(9, 4)
+    fig.suptitle(title, fontsize=24)
+    fig.set_size_inches(10,24)
+    plt.subplots_adjust(top=0.9)
+    for ax, row in zip(axes[:,0], freq_bands):
+        ax.set_ylabel(row, rotation=90, size='large')
+    for i in range(len(amp_pred_corrs)):
+        freq_corr = np.mean(amp_pred_corrs[i,:,:], axis=1)
+        max_abs_val = np.max(np.abs(freq_corr))
+        for i_class in range(4):
+            ax = axes[i, i_class]
+            mne.viz.plot_topomap(freq_corr[:,i_class], vis_positions,
+                            vmin=-max_abs_val, vmax=max_abs_val, contours=0,
+                            cmap=cm.coolwarm, axes=ax, show=False)
+            ax.set_title(all_classes[i_class])
+    fig.tight_layout()
+    fig.savefig('./output_{}.png'.format(title))    

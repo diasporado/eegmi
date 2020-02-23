@@ -36,7 +36,7 @@ def load_raw(training=False):
 
 def raw_to_data(raw_edf, training=True, drop_rejects=True, subj=None):
 
-    tmin, tmax = -0.5, 4.
+    tmin, tmax = 0, 4.
 
     stim_code = dict([(32766,1),(769,2), (770,3), (771,4), (772,5),(783,6),(276,7),(277,8),(768,9),
                       (1023,10),(1072,11)])
@@ -143,14 +143,13 @@ def raw_to_data(raw_edf, training=True, drop_rejects=True, subj=None):
     filter_data = filter_data.transpose(1,2,0,3) # 273, 1001, 42, 10
     filter_data = filter_data.reshape(filter_data.shape[0],filter_data.shape[1],6,7,filter_data.shape[3]) # 273, 1001, 6, 7, 10
     
-    if training:
-        return filter_data, y
-    else:
+    if not training:
         y = sio.loadmat(label_files_list[label_subj[subj]])['classlabel'].flatten()
         y = np.array([ i - 1 for i in y ])
         if drop_rejects:
             y_drop = [ i for i in range(288) if not accepted_trials_index[i] ]
             y = np.delete(y, y_drop, None)
-        return filter_data, y
+    
+    return filter_data, y, epochs
         
     
