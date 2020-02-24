@@ -77,7 +77,7 @@ def train(X_list, y, train_indices, val_indices, subject):
           callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=5,min_lr=0.00001),
           callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_loss',verbose=0,
                                     save_best_only=True, period=1),
-          callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss', baseline=0.000001)]
+          callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss', baseline=0.0000005)]
     model.summary()
     model.fit_generator(
         generator=training_generator,
