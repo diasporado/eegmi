@@ -21,7 +21,7 @@ folder_path = 'model_results_fb_local'
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 40
-early_stopping = 10
+early_stopping = 20
 
 '''
 Training model for classification of EEG samples into motor imagery classes
@@ -34,10 +34,10 @@ def layers(inputs, params=None):
     # pipe = Conv3D(128, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
     # pipe = LeakyReLU(alpha=0.05)(pipe)
     # pipe = Conv3D(128, (1,2,2), strides=(1,1,1), padding='valid')(pipe)
-    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
-    pipe = LeakyReLU(alpha=0.05)(pipe)
-    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(pipe)
+    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=32, padding='valid', groups=params['n_channels'])(inputs)
     pipe = BatchNormalization()(pipe)
+    pipe = LeakyReLU(alpha=0.05)(pipe)
+    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=16, padding='valid', groups=params['n_channels'])(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
     pipe = BatchNormalization()(pipe)
@@ -79,7 +79,7 @@ def train(X_list, y, train_indices, val_indices, subject):
           callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=5,min_lr=0.00001),
           callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_loss',verbose=0,
                                     save_best_only=True, period=1),
-          callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss', baseline=0.0000005)]
+          callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss', baseline=0.000001)]
     model.summary()
     model.fit_generator(
         generator=training_generator,
