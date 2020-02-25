@@ -41,13 +41,15 @@ def layers(inputs, params=None):
     pipe1 = Reshape((pipe1.shape[1].value, 64))(pipe1)
     pipe1 = AveragePooling1D(pool_size=(75), strides=(15))(pipe1)
 
-    pipe2 = Conv3D(128, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
+    pipe2 = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe2 = BatchNormalization()(pipe2)
     pipe2 = LeakyReLU(alpha=0.05)(pipe2)
-    pipe2 = Reshape((pipe2.shape[1].value, 128))(pipe2)
+    pipe2 = Reshape((pipe2.shape[1].value, 64))(pipe2)
     pipe2 = AveragePooling1D(pool_size=(75), strides=(15))(pipe2)
 
     pipe = concatenate([pipe1,pipe2], axis=2)
+    pipe = Dense(64)(pipe)
+    pipe = LeakyReLU(alpha=0.05)(pipe)
     # pipe = se_block(pipe)
     pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
