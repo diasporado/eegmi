@@ -22,30 +22,34 @@ use_center_loss = False
 use_contrastive_center_loss = False
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 500
-early_stopping = 20
+n_epoch = 15
+early_stopping = 10
 
 '''
 Training model for classification of EEG samples into motor imagery classes
 '''
 
 def layers(inputs, params=None): 
-    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=32, padding='valid', groups=params['n_channels'])(inputs)
+    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
+    pipe1 = BatchNormalization()(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=32, padding='valid', groups=params['n_channels'])(pipe1)
+    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     pipe1 = Conv3D(32, (1,2,3), strides=(1,1,1), padding='valid')(pipe1)
+    pipe1 = BatchNormalization()(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     pipe1 = Reshape((pipe1.shape[1].value, 32))(pipe1)
     pipe1 = AveragePooling1D(pool_size=(75), strides=(15))(pipe1)
 
     pipe2 = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
+    pipe2 = BatchNormalization()(pipe2)
     pipe2 = LeakyReLU(alpha=0.05)(pipe2)
     pipe2 = Reshape((pipe2.shape[1].value, 64))(pipe2)
     pipe2 = AveragePooling1D(pool_size=(75), strides=(15))(pipe2)
 
     pipe = concatenate([pipe1,pipe2], axis=2)
-    pipe = se_block(pipe)
+    # pipe = se_block(pipe)
+    pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
     return pipe
 
@@ -114,10 +118,10 @@ def train(X_list, y, train_indices, val_indices, subject):
     model.summary()
 
     cb = [callbacks.ProgbarLogger(count_mode='steps'),
-          callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=5,min_lr=0.00001),
+          callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=3,min_lr=0.00001),
           callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_loss',verbose=0,
                                     save_best_only=True, period=1),
-          callbacks.EarlyStopping(patience=early_stopping, monitor='val_accuracy')]
+          callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss')]
 
     model.fit_generator(
         generator=training_generator,
