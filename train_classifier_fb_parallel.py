@@ -48,7 +48,8 @@ def layers(inputs, params=None):
     pipe2 = AveragePooling1D(pool_size=(75), strides=(15))(pipe2)
 
     pipe = concatenate([pipe1,pipe2], axis=2)
-    pipe = Dense(64)(pipe)
+    pipe = Dense(32)(pipe)
+    pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     # pipe = se_block(pipe)
     pipe = Dropout(0.5)(pipe)
