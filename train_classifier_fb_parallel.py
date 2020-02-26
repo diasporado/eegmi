@@ -50,6 +50,7 @@ def layers(inputs, params=None):
     pipe = concatenate([pipe1,pipe2], axis=2)
     # pipe = se_block(pipe)
     pipe = Dense(64)(pipe)
+    pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
