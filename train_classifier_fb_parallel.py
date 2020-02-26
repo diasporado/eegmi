@@ -18,7 +18,7 @@ import read_bci_data_fb
 
 '''  Parameters '''
 folder_path = 'model_results_fb_parallel'
-use_center_loss = True
+use_center_loss = False
 use_contrastive_center_loss = False
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
@@ -35,16 +35,16 @@ def layers(inputs, params=None):
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    pipe1 = Conv3D(32, (1,2,3), strides=(1,1,1), padding='valid')(pipe1)
+    pipe1 = Conv3D(48, (1,2,3), strides=(1,1,1), padding='valid')(pipe1)
     pipe1 = BatchNormalization()(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    pipe1 = Reshape((pipe1.shape[1].value, 32))(pipe1)
+    pipe1 = Reshape((pipe1.shape[1].value, 48))(pipe1)
     pipe1 = AveragePooling1D(pool_size=(75), strides=(15))(pipe1)
 
-    pipe3 = Conv3D(96, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
+    pipe3 = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe3 = BatchNormalization()(pipe3)
     pipe3 = LeakyReLU(alpha=0.05)(pipe3)
-    pipe3 = Reshape((pipe3.shape[1].value, 96))(pipe3)
+    pipe3 = Reshape((pipe3.shape[1].value, 64))(pipe3)
     pipe3 = AveragePooling1D(pool_size=(75), strides=(15))(pipe3)
 
     pipe = concatenate([pipe1, pipe3], axis=2)
@@ -95,9 +95,9 @@ def train(X_list, y, train_indices, val_indices, subject):
  
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
     pipeline = layers(inputs, params)
-    pipeline = Dense(64)(pipeline)
-    pipeline = BatchNormalization()(pipeline)
-    ip1 = LeakyReLU(alpha=0.05, name='ip1')(pipeline)
+    # pipeline = Dense(64)(pipeline)
+    # pipeline = BatchNormalization()(pipeline)
+    # ip1 = LeakyReLU(alpha=0.05, name='ip1')(pipeline)
     output = Dense(output_dim, activation=activation)(pipeline)
     
     if use_center_loss or use_contrastive_center_loss:
@@ -144,7 +144,8 @@ def evaluate_model(X_list, y_test, X_indices, subject):
         'batch_size': trials,
         'n_classes': len(np.unique(y_test)),
         'n_channels': 9,
-        'shuffle': False
+        'shuffle': False,
+        'center_loss': use_center_loss
     }
 
     actual = [ all_classes[i] for i in y_test ]
@@ -156,9 +157,9 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     activation = 'softmax'
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
     pipeline = layers(inputs, params)
-    pipeline = Dense(64)(pipeline)
-    pipeline = BatchNormalization()(pipeline)
-    ip1 = LeakyReLU(alpha=0.05, name='ip1')(pipeline)
+    # pipeline = Dense(64)(pipeline)
+    # pipeline = BatchNormalization()(pipeline)
+    # ip1 = LeakyReLU(alpha=0.05, name='ip1')(pipeline)
     output = Dense(output_dim, activation=activation)(pipeline)
 
     if use_center_loss or use_contrastive_center_loss:
