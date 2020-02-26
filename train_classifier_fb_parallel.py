@@ -81,7 +81,7 @@ def train(X_list, y, train_indices, val_indices, subject):
         'n_classes': len(np.unique(y)),
         'n_channels': 9,
         'shuffle': True,
-        'center_loss': False
+        'center_loss': use_center_loss
     }
 
     training_generator = DataGenerator(X_list, y, train_indices, **params)
@@ -145,7 +145,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
         'n_classes': len(np.unique(y_test)),
         'n_channels': 9,
         'shuffle': False,
-        'center_loss': False
+        'center_loss': use_center_loss
     }
 
     actual = [ all_classes[i] for i in y_test ]
