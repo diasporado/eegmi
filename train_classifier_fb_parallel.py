@@ -20,9 +20,10 @@ import read_bci_data_fb
 folder_path = 'model_results_fb_parallel'
 use_center_loss = False
 use_contrastive_center_loss = False
+n_channels = 8
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 10
+n_epoch = 15
 early_stopping = 10
 
 '''
@@ -79,7 +80,7 @@ def train(X_list, y, train_indices, val_indices, subject):
         'dim': (X_shape[1], X_shape[2], X_shape[3]),
         'batch_size': batch_size,
         'n_classes': len(np.unique(y)),
-        'n_channels': 9,
+        'n_channels': n_channels,
         'shuffle': True,
         'center_loss': use_center_loss
     }
@@ -122,7 +123,7 @@ def train(X_list, y, train_indices, val_indices, subject):
     model.summary()
 
     cb = [callbacks.ProgbarLogger(count_mode='steps'),
-          callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=3,min_lr=0.00001),
+          callbacks.ReduceLROnPlateau(monitor='val_loss',factor=0.5,patience=3,min_lr=0.00001),
           callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_loss',verbose=0,
                                     save_best_only=True, period=1),
           callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss')]
@@ -143,7 +144,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
         'dim': (X_shape[1], X_shape[2], X_shape[3]),
         'batch_size': trials,
         'n_classes': len(np.unique(y_test)),
-        'n_channels': 9,
+        'n_channels': n_channels,
         'shuffle': False,
         'center_loss': use_center_loss
     }

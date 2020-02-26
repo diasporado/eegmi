@@ -14,7 +14,7 @@ from keras import optimizers, callbacks, backend as K
 
 from DepthwiseConv3D import DepthwiseConv3D
 from keras.utils.generic_utils import get_custom_objects
-from methods import se_block, build_crops, square, Square, Log, safe_log, plot_mne_vis
+from methods import se_block, build_crops, square, Square, Log, safe_log, plot_mne_vis, plot_feature_maps
 from DataGenerator import DataGenerator
 import read_bci_data_fb
 
@@ -30,6 +30,7 @@ from matplotlib import cm
 '''  Parameters '''
 folder_path = 'model_results_fb_global'
 batch_size = 512
+n_channels = 8
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 channel_indices = [3,8,9,10,11,12,14,15,16,17,18,19,20,22,23,24,25,26,30,31,32,38]
 n_epoch = 100
@@ -62,7 +63,7 @@ def train_single_subj(X_list, y, train_indices, val_indices, subject):
         'dim': (X_shape[1], X_shape[2], X_shape[3]),
         'batch_size': batch_size,
         'n_classes': 4,
-        'n_channels': 9,
+        'n_channels': n_channels,
         'shuffle': True
     }
 
@@ -82,7 +83,7 @@ def train_single_subj(X_list, y, train_indices, val_indices, subject):
     opt = optimizers.adam(lr=0.001, beta_2=0.999)
     model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
     cb = [callbacks.ProgbarLogger(count_mode='steps'),
-          callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=5,min_lr=0.00001),
+          callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=3,min_lr=0.00001),
           callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_loss',verbose=0,
                                     save_best_only=True, period=1),
           callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss')]
@@ -103,7 +104,7 @@ def evaluate_single_subj(X_list, y_test, X_indices, subject):
         'dim': (X_shape[1], X_shape[2], X_shape[3]),
         'batch_size': trials,
         'n_classes': 4,
-        'n_channels': 9,
+        'n_channels': n_channels,
         'shuffle': False
     }
 
@@ -118,7 +119,6 @@ def evaluate_single_subj(X_list, y_test, X_indices, subject):
     output = Dense(output_dim, activation='softmax')(pipeline)
     model = Model(inputs=inputs, outputs=output)
     model.load_weights('./{}/{}.hdf5'.format(folder_path, model_name))
-    model.summary()
 
     test_generator = DataGenerator(X_list, y_test, X_indices, **params)
     y_pred = model.predict_generator(
@@ -153,6 +153,32 @@ def evaluate_single_subj(X_list, y_test, X_indices, subject):
     print('kappa value: {}'.format(kappa_score))
 
 
+def evaluate_layer(X_list, X_indices, subject):
+    X_shape = X_list[0].shape # (273, 250, 6, 7, 9)
+    trials = X_shape[0]
+    params = {
+        'dim': (X_shape[1], X_shape[2], X_shape[3]),
+        'batch_size': trials,
+        'n_classes': 4,
+        'n_channels': 9,
+        'shuffle': False
+    }
+    model_name = 'A0{:d}_model'.format(subject)
+    output_dim = params['n_classes']
+    inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
+    pipeline = layers(inputs, params)
+    output = Dense(output_dim)(pipeline)
+    model = Model(inputs=inputs, outputs=output)
+    model.load_weights('./{}/{}.hdf5'.format(folder_path, model_name))
+    model = Model(inputs=model.inputs, outputs=model.layers[1].output)
+    model.summary()
+    
+    X_test = np.array(X_list)
+    X_test = X_test.reshape(X_test.shape[0] * X_test.shape[1], X_test.shape[2], X_test.shape[3], X_test.shape[4], X_test.shape[5])
+    y_pred = model.predict(X_test)
+    
+    plot_feature_maps(y_pred)
+    
 ''' Builds Input‐perturbation network‐prediction correlation map for a single subject '''
 def build_correlation_map_single(X_list, subject, epochs):
 
@@ -235,20 +261,18 @@ def evaluate(visualise=False):
     subj_test_order = [ np.argwhere(np.array(subjects_test)==i+1)[0][0]
                     for i in range(len(subjects_test))]
     
-    X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
-    ''' Test Model '''
-    X_list = build_crops(X_test, increment=50)
-    X_indices = []
-    crops = len(X_list)
-    trials = len(X_list[0])
-    for a in range(crops):
-        for b in range(trials):
-            X_indices.append((a, b))
-    
     # Iterate test on each subject separately
-    amp_pred_corrs_list = []
     for i in range(9):
         test_index = subj_test_order[i]
+        X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
+        ''' Test Model '''
+        X_list = build_crops(X_test, increment=50)
+        X_indices = []
+        crops = len(X_list)
+        trials = len(X_list[0])
+        for a in range(crops):
+            for b in range(trials):
+                X_indices.append((a, b))
         np.random.seed(123)
         tf.reset_default_graph()
         with tf.Session() as sess:
@@ -292,8 +316,36 @@ def visualise():
     plot_mne_vis(amp_pred_corrs_list, title="Average Across 9 Subjects")
 
 
+def visualise_feature_maps():
+    # load bci competition test data set
+    raw_edf_test, subjects_test = read_bci_data_fb.load_raw(training=False)
+    subj_test_order = [ np.argwhere(np.array(subjects_test)==i+1)[0][0]
+                    for i in range(len(subjects_test))]
+
+    for i in range(1):
+        test_index = subj_test_order[i]
+        X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
+        # Split by class
+        class_data = [[X_test[y_ind] for y_ind, y in enumerate(y_test) if y == ind] for ind in range(4)]
+        np.random.seed(123)
+        tf.reset_default_graph()
+        with tf.Session() as sess:
+            for X_list in class_data:
+                X_list = np.array(X_list)
+                X_list = build_crops(X_list, increment=100)
+                X_indices = []
+                crops = len(X_list)
+                trials = len(X_list[0])
+                for a in range(crops):
+                    for b in range(trials):
+                        X_indices.append((a, b))
+                evaluate_layer(X_list, X_indices, i+1)
+
+            
+
 if __name__ == '__main__': # if this file is been run directly by Python
     
-    # train()
-    # evaluate()
-    visualise()
+    train()
+    evaluate()
+    # visualise()
+    # visualise_feature_maps()
