@@ -43,7 +43,7 @@ def layers(inputs, params=None):
     pipe1 = AveragePooling1D(pool_size=(75), strides=(15))(pipe1)
 
     pipe3 = Reshape((inputs.shape[1].value, inputs.shape[2].value * inputs.shape[3].value, inputs.shape[4].value))(inputs)
-    pipe3 = Convolution2D(64, (6,7), strides=(1,1), padding='valid')(pipe3)
+    pipe3 = Convolution2D(64, (1,42), strides=(1,1), padding='valid')(pipe3)
     pipe3 = BatchNormalization()(pipe3)
     pipe3 = LeakyReLU(alpha=0.05)(pipe3)
     pipe3 = Reshape((pipe3.shape[1].value, 64))(pipe3)
