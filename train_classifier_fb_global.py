@@ -30,7 +30,7 @@ from matplotlib import cm
 '''  Parameters '''
 folder_path = 'model_results_fb_global'
 batch_size = 512
-n_channels = 8
+n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 channel_indices = [3,8,9,10,11,12,14,15,16,17,18,19,20,22,23,24,25,26,30,31,32,38]
 n_epoch = 100
@@ -44,7 +44,9 @@ get_custom_objects().update({'square': Square(square)})
 get_custom_objects().update({'log': Log(safe_log)})
     
 def layers(inputs, params=None):
-    pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
+    pipe = Conv3D(1, (1,1,1), strides=(1,1,1), padding='valid')(inputs)
+    pipe = LeakyReLU(alpha=0.05)(pipe)
+    pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(pipe)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Dropout(0.5)(pipe)

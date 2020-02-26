@@ -113,7 +113,7 @@ def raw_to_data(raw_edf, training=True, drop_rejects=True, subj=None):
     y = epochs.events[:, 2] - 2
 
     filter_data = []
-    filter_bank = [(4.,8.),(8.,12.),(12.,16.),(16.,20.),(20.,24.),(24.,28.),(28.,32.),(32.,36.)]
+    filter_bank = [(4.,8.),(8.,12.),(12.,16.),(16.,20.),(20.,24.),(24.,28.),(28.,32.),(32.,36.),(36.,40)]
     for _filter in filter_bank:
         filter_data.append(epochs.copy().filter(_filter[0], _filter[1], fir_design='firwin').get_data())
     filter_data = np.array(filter_data)
