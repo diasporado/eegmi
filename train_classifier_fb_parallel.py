@@ -53,8 +53,6 @@ def layers(inputs, params=None):
     pipe2 = Conv3D(64, (1,2,2), strides=(1,1,1), padding='valid')(pipe2)
     pipe2 = LeakyReLU(alpha=0.05)(pipe2)
     pipe2 = Conv3D(64, (1,2,2), strides=(1,1,1), padding='valid')(pipe2)
-    pipe2 = LeakyReLU(alpha=0.05)(pipe2)
-    pipe2 = Conv3D(64, (1,2,2), strides=(1,1,1), padding='valid')(pipe2)
     pipe2 = BatchNormalization()(pipe2)
     pipe2 = LeakyReLU(alpha=0.05)(pipe2)
     pipe2 = Reshape((pipe2.shape[1].value, 64))(pipe2)
