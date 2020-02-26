@@ -84,7 +84,7 @@ def train_single_subj(X_list, y, train_indices, val_indices, subject):
     model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
     cb = [callbacks.ProgbarLogger(count_mode='steps'),
           callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=3,min_lr=0.00001),
-          callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_loss',verbose=0,
+          callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='loss',verbose=0,
                                     save_best_only=True, period=1),
           callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss')]
     model.summary()
@@ -255,7 +255,7 @@ def train():
             gc.collect()
 
 
-def evaluate(visualise=False):
+def evaluate():
     # load bci competition test data set
     raw_edf_test, subjects_test = read_bci_data_fb.load_raw(training=False)
     subj_test_order = [ np.argwhere(np.array(subjects_test)==i+1)[0][0]
@@ -345,7 +345,7 @@ def visualise_feature_maps():
 
 if __name__ == '__main__': # if this file is been run directly by Python
     
-    train()
+    # train()
     evaluate()
     # visualise()
     # visualise_feature_maps()
