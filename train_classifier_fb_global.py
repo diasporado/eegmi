@@ -44,8 +44,6 @@ get_custom_objects().update({'square': Square(square)})
 get_custom_objects().update({'log': Log(safe_log)})
     
 def layers(inputs, params=None):
-    pipe = Conv3D(1, (1,1,1), strides=(1,1,1), padding='valid')(inputs)
-    pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(pipe)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
