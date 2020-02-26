@@ -97,3 +97,18 @@ def plot_mne_vis(amp_pred_corrs, title=None):
             ax.set_title(all_classes[i_class])
     fig.tight_layout()
     fig.savefig('./output_{}.png'.format(title))    
+
+def plot_feature_maps(y_pred, row, col, title=None):
+    index = 1
+    fig = plt.figure(figsize=(col,row))
+    for r in range(row):
+        for c in range(col):
+            ax = plt.subplot(row, col, index)
+            if c == 0:
+                ax.set_ylabel(all_classes[r], rotation=90, size='medium')
+            ax.set_xticks([])
+            ax.set_yticks([])
+            plt.imshow(y_pred[:, :, index-1], cmap='viridis')
+            index += 1
+    fig.tight_layout()
+    fig.savefig('./feature_maps_{}.png'.format(title))  
