@@ -17,7 +17,7 @@ from DataGenerator import DataGenerator
 import read_bci_data_fb
 
 '''  Parameters '''
-folder_path = 'model_results_fb_parallel'
+folder_path = 'model_results_fb_parallel_SENet'
 use_center_loss = False
 use_contrastive_center_loss = False
 n_channels = 9
@@ -49,7 +49,7 @@ def layers(inputs, params=None):
     pipe3 = AveragePooling1D(pool_size=(75), strides=(15))(pipe3)
 
     pipe = concatenate([pipe1, pipe3], axis=2)
-    # pipe = se_block(pipe)
+    pipe = se_block(pipe)
     # pipe = Dense(64)(pipe)
     # pipe = BatchNormalization()(pipe)
     # pipe = LeakyReLU(alpha=0.05)(pipe)
