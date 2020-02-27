@@ -23,7 +23,7 @@ use_contrastive_center_loss = False
 n_channels = 9
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 10
+n_epoch = 20
 early_stopping = 10
 
 '''
@@ -42,10 +42,10 @@ def layers(inputs, params=None):
     pipe1 = Reshape((pipe1.shape[1].value, 64))(pipe1)
     pipe1 = AveragePooling1D(pool_size=(75), strides=(15))(pipe1)
 
-    pipe3 = Conv3D(128, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
+    pipe3 = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe3 = BatchNormalization()(pipe3)
     pipe3 = LeakyReLU(alpha=0.05)(pipe3)
-    pipe3 = Reshape((pipe3.shape[1].value, 128))(pipe3)
+    pipe3 = Reshape((pipe3.shape[1].value, 64))(pipe3)
     pipe3 = AveragePooling1D(pool_size=(75), strides=(15))(pipe3)
 
     pipe = concatenate([pipe1, pipe3], axis=2)

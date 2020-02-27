@@ -79,22 +79,20 @@ vis_positions = [get_channelpos(name, CHANNEL_10_20_APPROX) for name in ch_names
 vis_positions = np.array(vis_positions)
 
 def plot_mne_vis(amp_pred_corrs, title=None):
-    fig, axes = plt.subplots(9, 4)
-    st = fig.suptitle(title, fontsize=24)
-    fig.set_size_inches(10,24)
-    st.set_y(0.95)
-    plt.subplots_adjust(top=0.5)
-    for ax, row in zip(axes[:,0], freq_bands):
-        ax.set_ylabel(row, rotation=90, size='large')
+    fig, axes = plt.subplots(4, 9)
+    fig.set_size_inches(24,10)
     for i in range(len(amp_pred_corrs)):
         freq_corr = np.mean(amp_pred_corrs[i,:,:], axis=1)
         max_abs_val = np.max(np.abs(freq_corr))
         for i_class in range(4):
-            ax = axes[i, i_class]
+            ax = axes[i_class, i]
             mne.viz.plot_topomap(freq_corr[:,i_class], vis_positions,
                             vmin=-max_abs_val, vmax=max_abs_val, contours=0,
                             cmap=cm.coolwarm, axes=ax, show=False)
-            ax.set_title(all_classes[i_class])
+            if i_class == 3:
+                ax.set_xlabel(freq_bands[i], size='large')
+            if i == 0:
+                ax.set_ylabel(all_classes[i_class], rotation=90, size='large')
     fig.tight_layout()
     fig.savefig('./output_{}.png'.format(title))    
 
@@ -106,6 +104,8 @@ def plot_feature_maps(y_pred, row, col, title=None):
             ax = plt.subplot(row, col, index)
             if c == 0:
                 ax.set_ylabel(all_classes[r], rotation=90, size='medium')
+            if r == 3:
+                ax.set_xlabel(freq_bands[c], size='medium')
             ax.set_xticks([])
             ax.set_yticks([])
             plt.imshow(y_pred[:, :, index-1], cmap='viridis')
