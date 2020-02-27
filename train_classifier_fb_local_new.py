@@ -173,7 +173,7 @@ def evaluate_layer(X_list, X_indices, subject):
     output = Dense(output_dim)(pipeline)
     model = Model(inputs=inputs, outputs=output)
     model.load_weights('./{}/{}.hdf5'.format(folder_path, model_name))
-    model = Model(inputs=model.inputs, outputs=model.layers[1].output)
+    model = Model(inputs=model.inputs, outputs=model.layers[4].output)
     model.summary()
     
     X_test = np.array(X_list)
@@ -325,13 +325,13 @@ def visualise():
 
 def visualise_feature_maps():
     # load bci competition test data set
-    raw_edf_test, subjects_test = read_bci_data_fb.load_raw(training=True)
+    raw_edf_test, subjects_test = read_bci_data_fb.load_raw(training=False)
     subj_test_order = [ np.argwhere(np.array(subjects_test)==i+1)[0][0]
                     for i in range(len(subjects_test))]
 
     for i in range(9):
         test_index = subj_test_order[i]
-        X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=True, drop_rejects=True, subj=test_index)
+        X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
         # Split by class
         class_data = [[X_test[y_ind] for y_ind, y in enumerate(y_test) if y == ind] for ind in range(4)]
         np.random.seed(123)
@@ -351,11 +351,11 @@ def visualise_feature_maps():
                 y_pred = evaluate_layer(X_list, X_indices, i+1)
                 y_preds.append(y_pred)
             y_preds = np.concatenate(y_preds, axis=-1)
-            plot_feature_maps(y_preds, 4, 9, title="subj_train_{}".format(i))
+            plot_feature_maps(y_preds, 4, 9, title="subj_test_{}".format(i))
             y_preds_subjects.append(np.expand_dims(y_preds, axis=0))
     y_preds_subjects = np.concatenate(y_preds_subjects, axis=0)
     y_preds_subjects = np.mean(y_preds_subjects, axis=0)
-    plot_feature_maps(y_preds, 4, 9, title="subj_train_avg_layer1")
+    plot_feature_maps(y_preds, 4, 9, title="subj_test_avg_layer2")
 
 
 
