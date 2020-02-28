@@ -23,7 +23,7 @@ use_contrastive_center_loss = False
 n_channels = 9
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 20
+n_epoch = 25
 early_stopping = 10
 
 '''
