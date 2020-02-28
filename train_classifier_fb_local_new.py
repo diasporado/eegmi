@@ -8,7 +8,7 @@ import tensorflow as tf
 from keras.models import Model, Sequential, load_model
 from keras.layers import Dense,BatchNormalization,AveragePooling2D,MaxPooling2D,MaxPooling3D, \
     Convolution2D,Activation,Flatten,Dropout,Convolution1D,Reshape,Conv3D,TimeDistributed,LSTM,AveragePooling2D, \
-    Input, AveragePooling3D, MaxPooling3D, concatenate, LeakyReLU, AveragePooling1D
+    Input, AveragePooling3D, MaxPooling3D, concatenate, LeakyReLU, AveragePooling1D, Permute
 from keras import optimizers, callbacks
 
 from DepthwiseConv3D import DepthwiseConv3D
@@ -45,7 +45,7 @@ def layers(inputs, params=None):
     # pipe = Conv3D(64, (1,3,3), strides=(1,1,1), padding='valid')(pipe)
     # pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
-    pipe = BatchNormalization()(pipe)
+    # pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
@@ -240,7 +240,7 @@ def train():
                     for i in range(len(subjects_train))]
 
     # Iterate training on each subject separately
-    for i in range(9):
+    for i in range(6,7):
         train_index = subj_train_order[i]
         np.random.seed(123)
         X, y, _ = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
@@ -270,7 +270,7 @@ def evaluate(visualise=False):
                     for i in range(len(subjects_test))]
     
     # Iterate test on each subject separately
-    for i in range(9):
+    for i in range(6,7):
         test_index = subj_test_order[i]
         X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
         ''' Test Model '''
@@ -326,13 +326,13 @@ def visualise():
 
 def visualise_feature_maps():
     # load bci competition test data set
-    raw_edf_test, subjects_test = read_bci_data_fb.load_raw(training=False)
+    raw_edf_test, subjects_test = read_bci_data_fb.load_raw(training=True)
     subj_test_order = [ np.argwhere(np.array(subjects_test)==i+1)[0][0]
                     for i in range(len(subjects_test))]
 
     for i in range(6,7):
         test_index = subj_test_order[i]
-        X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
+        X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=True, drop_rejects=True, subj=test_index)
         # Split by class
         class_data = [[X_test[y_ind] for y_ind, y in enumerate(y_test) if y == ind] for ind in range(4)]
         np.random.seed(123)
@@ -362,17 +362,16 @@ def visualise_feature_maps():
             print(y_preds.max())
             print(y_preds.min())
             y_preds = y_preds.reshape(shape)
-            plot_feature_maps(y_preds, 4, 9, title="subj_test_{}".format(i))
+            plot_feature_maps(y_preds, 4, 9, title="subj_train_{}".format(i))
             y_preds_subjects.append(np.expand_dims(y_preds, axis=0))
        
-    y_preds_subjects = np.concatenate(y_preds_subjects, axis=0)
-    y_preds_subjects = np.mean(y_preds_subjects, axis=0)
-    plot_feature_maps(y_preds, 4, 9, title="subj_test_avg_layer1")
-
+    # y_preds_subjects = np.concatenate(y_preds_subjects, axis=0)
+    # y_preds_subjects = np.mean(y_preds_subjects, axis=0)
+    # plot_feature_maps(y_preds, 4, 9, title="subj_train_avg_layer1")
 
 
 if __name__ == '__main__': # if this file is been run directly by Python
-    # train()
-    # evaluate()
+    train()
+    evaluate()
     # visualise()
     visualise_feature_maps()
