@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 
 '''  Parameters '''
-folder_path = 'model_results_fb_global'
+folder_path = 'model_results_fb_global_SENet'
 batch_size = 512
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
@@ -44,7 +44,11 @@ get_custom_objects().update({'square': Square(square)})
 get_custom_objects().update({'log': Log(safe_log)})
     
 def layers(inputs, params=None):
-    pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
+    pipe = Reshape((inputs.shape[1], inputs.shape[2] * inputs.shape[3] * inputs.shape[4]))(inputs)
+    pipe = se_block(pipe, compress_rate=6)
+    pipe = Reshape((inputs.shape[1], inputs.shape[2] * inputs.shape[3], inputs.shape[4]))(pipe)
+    pipe = Convolution2D(64, (1,42), strides=(1,1), padding='valid')(pipe)
+    #pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Dropout(0.5)(pipe)
