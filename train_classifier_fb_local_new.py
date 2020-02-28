@@ -17,6 +17,7 @@ from DataGenerator import DataGenerator
 import read_bci_data_fb
 
 import mne
+from sklearn.preprocessing import MinMaxScaler
 from braindecode.datasets.sensor_positions import get_channelpos, CHANNEL_10_20_APPROX
 from braindecode.visualization.perturbation import compute_amplitude_prediction_correlations
 
@@ -173,7 +174,7 @@ def evaluate_layer(X_list, X_indices, subject):
     output = Dense(output_dim)(pipeline)
     model = Model(inputs=inputs, outputs=output)
     model.load_weights('./{}/{}.hdf5'.format(folder_path, model_name))
-    model = Model(inputs=model.inputs, outputs=model.layers[4].output)
+    model = Model(inputs=model.inputs, outputs=model.layers[1].output)
     model.summary()
     
     X_test = np.array(X_list)
@@ -329,7 +330,7 @@ def visualise_feature_maps():
     subj_test_order = [ np.argwhere(np.array(subjects_test)==i+1)[0][0]
                     for i in range(len(subjects_test))]
 
-    for i in range(9):
+    for i in range(6,7):
         test_index = subj_test_order[i]
         X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
         # Split by class
@@ -351,11 +352,18 @@ def visualise_feature_maps():
                 y_pred = evaluate_layer(X_list, X_indices, i+1)
                 y_preds.append(y_pred)
             y_preds = np.concatenate(y_preds, axis=-1)
+            scaler = MinMaxScaler()
+            shape = y_preds.shape
+            y_preds = scaler.fit_transform(y_preds.flatten().reshape(-1,1))
+            print(y_preds.max)
+            print(y_preds.min)
+            y_preds = y_preds.reshape(shape)
             plot_feature_maps(y_preds, 4, 9, title="subj_test_{}".format(i))
             y_preds_subjects.append(np.expand_dims(y_preds, axis=0))
+       
     y_preds_subjects = np.concatenate(y_preds_subjects, axis=0)
     y_preds_subjects = np.mean(y_preds_subjects, axis=0)
-    plot_feature_maps(y_preds, 4, 9, title="subj_test_avg_layer2")
+    plot_feature_maps(y_preds, 4, 9, title="subj_test_avg_layer1")
 
 
 
