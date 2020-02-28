@@ -240,7 +240,7 @@ def train():
                     for i in range(len(subjects_train))]
 
     # Iterate training on each subject separately
-    for i in range(6,7):
+    for i in [0,1,2,3,4,5,7,8]:
         train_index = subj_train_order[i]
         np.random.seed(123)
         X, y, _ = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
@@ -270,7 +270,7 @@ def evaluate(visualise=False):
                     for i in range(len(subjects_test))]
     
     # Iterate test on each subject separately
-    for i in range(6,7):
+    for i in [0,1,2,3,4,5,7,8]:
         test_index = subj_test_order[i]
         X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
         ''' Test Model '''
@@ -374,4 +374,4 @@ if __name__ == '__main__': # if this file is been run directly by Python
     train()
     evaluate()
     # visualise()
-    visualise_feature_maps()
+    # visualise_feature_maps()
