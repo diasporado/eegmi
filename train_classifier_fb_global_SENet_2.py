@@ -33,7 +33,7 @@ batch_size = 512
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 channel_indices = [3,8,9,10,11,12,14,15,16,17,18,19,20,22,23,24,25,26,30,31,32,38]
-n_epoch = 100
+n_epoch = 80
 early_stopping = 10
 
 '''
@@ -84,7 +84,7 @@ def train_single_subj(X_list, y, train_indices, val_indices, subject):
     output = Dense(output_dim, activation=activation)(pipeline)
     model = Model(inputs=inputs, outputs=output)
 
-    opt = optimizers.adam(lr=0.001, beta_2=0.999)
+    opt = optimizers.adam(lr=0.003, beta_2=0.999)
     model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
     cb = [callbacks.ProgbarLogger(count_mode='steps'),
           callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=3,min_lr=0.00001),
@@ -349,7 +349,7 @@ def visualise_feature_maps():
 
 if __name__ == '__main__': # if this file is been run directly by Python
     
-    # train()
+    train()
     evaluate()
     # visualise()
     # visualise_feature_maps()
