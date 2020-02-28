@@ -44,10 +44,9 @@ get_custom_objects().update({'square': Square(square)})
 get_custom_objects().update({'log': Log(safe_log)})
     
 def layers(inputs, params=None):
-    pipe = Reshape((inputs.shape[1], inputs.shape[2] * inputs.shape[3] * inputs.shape[4]))(inputs)
-    print(pipe.shape)
+    pipe = Reshape((inputs.shape[1].value, inputs.shape[2].value * inputs.shape[3].value * inputs.shape[4].value))(inputs)
     pipe = se_block(pipe, compress_rate=6)
-    pipe = Reshape((inputs.shape[1], inputs.shape[2] * inputs.shape[3], inputs.shape[4]))(pipe)
+    pipe = Reshape((inputs.shape[1].value, inputs.shape[2].value * inputs.shape[3].value, inputs.shape[4].value))(pipe)
     pipe = Convolution2D(64, (1,42), strides=(1,1), padding='valid')(pipe)
     #pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe = BatchNormalization()(pipe)
