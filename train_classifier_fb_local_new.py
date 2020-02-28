@@ -3,6 +3,8 @@ import pandas as pd
 from sklearn import metrics
 from sklearn.model_selection import train_test_split
 import gc
+import os
+os.environ['CUDA_VISIBLE_DEVICES']='-1'
 import tensorflow as tf
 
 from keras.models import Model, Sequential, load_model
