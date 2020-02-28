@@ -31,7 +31,7 @@ from matplotlib import cm
 folder_path = 'model_results_fb_local'
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 15
+n_epoch = 20
 early_stopping = 10
 
 '''
