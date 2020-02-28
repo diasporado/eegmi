@@ -45,6 +45,7 @@ get_custom_objects().update({'log': Log(safe_log)})
     
 def layers(inputs, params=None):
     pipe = Reshape((inputs.shape[1], inputs.shape[2] * inputs.shape[3] * inputs.shape[4]))(inputs)
+    print(pipe.shape)
     pipe = se_block(pipe, compress_rate=6)
     pipe = Reshape((inputs.shape[1], inputs.shape[2] * inputs.shape[3], inputs.shape[4]))(pipe)
     pipe = Convolution2D(64, (1,42), strides=(1,1), padding='valid')(pipe)
