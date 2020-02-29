@@ -23,7 +23,7 @@ use_contrastive_center_loss = False
 n_channels = 9
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 25
+n_epoch = 20
 early_stopping = 10
 
 '''
@@ -49,9 +49,9 @@ def layers(inputs, params=None):
 
     pipe = concatenate([pipe1, pipe3], axis=2)
     # pipe = se_block(pipe)
-    # pipe = Dense(64)(pipe)
-    # pipe = BatchNormalization()(pipe)
-    # pipe = LeakyReLU(alpha=0.05)(pipe)
+    pipe = Dense(64)(pipe)
+    pipe = BatchNormalization()(pipe)
+    pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
     return pipe
