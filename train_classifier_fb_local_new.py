@@ -46,7 +46,7 @@ def layers(inputs, params=None):
         # Slicing the ith channel:
         out = Lambda(lambda x: x[:,:,:,:,i])(inputs)
         out = Lambda(lambda x: K.expand_dims(x, -1))(out)
-        out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=64)(out)
+        out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
         out = LeakyReLU(alpha=0.05)(out)
         out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=1)(out)
         out = LeakyReLU(alpha=0.05)(out)
