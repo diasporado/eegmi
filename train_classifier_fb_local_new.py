@@ -254,7 +254,7 @@ def train():
                     for i in range(len(subjects_train))]
 
     # Iterate training on each subject separately
-    for i in [0,1,2,3,4,5,7,8]:
+    for i in [0,1,2,3,4,5,6,7,8]:
         train_index = subj_train_order[i]
         np.random.seed(123)
         X, y, _ = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
@@ -390,7 +390,7 @@ def visualise_feature_maps():
 
 
 if __name__ == '__main__': # if this file is been run directly by Python
-    train()
+    # train()
     evaluate()
     # visualise()
     # visualise_feature_maps()
