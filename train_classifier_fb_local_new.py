@@ -46,10 +46,13 @@ def layers(inputs, params=None):
         out = Lambda(lambda x: x[:,:,:,:,i])(inputs)
         out = Lambda(lambda x: K.expand_dims(x, -1))(out)
         out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=64)(out)
+        print(out.shape)
         out = LeakyReLU(alpha=0.05)(out)
         out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=64)(out)
+        print(out.shape)
         out = LeakyReLU(alpha=0.05)(out)
         out = DepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), padding='valid', depth_multiplier=64)(out)
+        print(out.shape)
         branch_outputs.append(out)
     pipe = Add()(branch_outputs)
     # pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
@@ -264,8 +267,8 @@ def train():
         X_indices = np.array(X_indices)
         train_indices, val_indices = train_test_split(X_indices, test_size=0.2)
         
-        tf.reset_default_graph()
-        with tf.Session() as sess:
+        tf.compat.v1.reset_default_graph()
+        with tf.compat.v1.Session() as sess:
             train_single_subj(X_list, y, train_indices, val_indices, i+1)
             del(X)
             del(y)
@@ -292,8 +295,8 @@ def evaluate(visualise=False):
             for b in range(trials):
                 X_indices.append((a, b))
         np.random.seed(123)
-        tf.reset_default_graph()
-        with tf.Session() as sess:
+        tf.compat.v1.reset_default_graph()
+        with tf.compat.v1.Session() as sess:
             evaluate_single_subj(X_list, y_test, X_indices, i+1)
             del(X_test)
             del(y_test)
@@ -313,8 +316,8 @@ def visualise():
         np.random.seed(123)
         X, y, epochs = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
         X_list = build_crops(X, increment=50)
-        tf.reset_default_graph()
-        with tf.Session() as sess:
+        tf.compat.v1.reset_default_graph()
+        with tf.compat.v1.Session() as sess:
             ''' Visualise Model '''
             print("Calculating input‐perturbation network‐prediction correlation map...")
             amp_pred_corrs = build_correlation_map_single(X_list, i+1, epochs)
@@ -350,7 +353,8 @@ def visualise_feature_maps():
         np.random.seed(123)
         tf.reset_default_graph()
         y_preds_subjects, min_ys, max_ys = [], [], []
-        with tf.Session() as sess:
+        tf.compat.v1.reset_default_graph()
+        with tf.compat.v1.Session() as sess:
             y_preds = []
             for class_ind, X_list in enumerate(class_data):
                 X_list = np.array(X_list)
