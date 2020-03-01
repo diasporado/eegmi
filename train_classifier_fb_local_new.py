@@ -29,7 +29,7 @@ from matplotlib import cm
 
 '''  Parameters '''
 folder_path = 'model_results_fb_local'
-batch_size = 64
+batch_size = 512
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 20
@@ -40,32 +40,18 @@ Training model for classification of EEG samples into motor imagery classes
 '''
 
 def layers(inputs, params=None):
-    branch_outputs_1 = []
+    branch_outputs = []
     for i in range(n_channels):
         # Slicing the ith channel:
         out = Lambda(lambda x: x[:,:,:,:,i])(inputs)
         out = Lambda(lambda x: K.expand_dims(x, -1))(out)
         out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=64)(out)
-        out = Lambda(lambda x: K.expand_dims(x, -1))(out)
-        branch_outputs_1.append(out)
-    pipe = concatenate(branch_outputs_1, axis=-1)
-    pipe = LeakyReLU(alpha=0.05)(pipe)
-    branch_outputs_2 = []
-    for i in range(n_channels):
-        # Slicing the ith channel:
-        out = Lambda(lambda x: x[:,:,:,:,:,i])(pipe)
+        out = LeakyReLU(alpha=0.05)(out)
         out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=1)(out)
-        out = Lambda(lambda x: K.expand_dims(x, -1))(out)
-        branch_outputs_2.append(out)
-    pipe = concatenate(branch_outputs_2, axis=-1)
-    pipe = LeakyReLU(alpha=0.05)(pipe)
-    branch_outputs_3 = []
-    for i in range(n_channels):
-        # Slicing the ith channel:
-        out = Lambda(lambda x: x[:,:,:,:,:,i])(pipe)
+        out = LeakyReLU(alpha=0.05)(out)
         out = DepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), padding='valid', depth_multiplier=1)(out)
-        branch_outputs_3.append(out)
-    pipe = Add()(branch_outputs_3)
+        branch_outputs.append(out)
+    pipe = Add()(branch_outputs)
     # pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
     # pipe = BatchNormalization()(pipe)
     # pipe = LeakyReLU(alpha=0.05)(pipe)
