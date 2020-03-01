@@ -55,11 +55,11 @@ def layers(inputs, params=None):
     pipe = Add()(branch_outputs)
     
     '''
-    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'], activation="elu")(inputs)
+    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
+    pipe = LeakyReLU(alpha=0.05)(pipe)
+    # pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=1, padding='valid', groups=params['n_channels'])(pipe)
     # pipe = LeakyReLU(alpha=0.05)(pipe)
-    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=1, padding='valid', groups=params['n_channels'], activation="elu")(pipe)
-    # pipe = LeakyReLU(alpha=0.05)(pipe)
-    pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
+    pipe = Conv3D(64, (1,4,5), strides=(1,1,1), padding='valid')(pipe)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Reshape((pipe.shape[1].value, 64))(pipe)
