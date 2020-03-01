@@ -39,17 +39,24 @@ Training model for classification of EEG samples into motor imagery classes
 '''
 
 def layers(inputs, params=None):
-    # pipe = Conv3D(64, (1,3,3), strides=(1,1,1), padding='valid')(inputs)
+    branch_outputs = []
+    for i in range(n_channels):
+        # Slicing the ith channel:
+        out = Lambda(lambda x: x[:,:,:,:,i])(inputs)
+        out = Lambda(lambda x: K.expand_dims(x, -1))(out)
+        out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=64)(out)
+        out = LeakyReLU(alpha=0.05)(out)
+        out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=64)(out)
+        out = LeakyReLU(alpha=0.05)(out)
+        out = DepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), padding='valid', depth_multiplier=64)(out)
+        branch_outputs.append(out)
+    pipe = Add()(branch_outputs)
+    # pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
     # pipe = BatchNormalization()(pipe)
     # pipe = LeakyReLU(alpha=0.05)(pipe)
-    # pipe = Conv3D(64, (1,3,3), strides=(1,1,1), padding='valid')(pipe)
+    # pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(pipe)
     # pipe = LeakyReLU(alpha=0.05)(pipe)
-    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
-    # pipe = BatchNormalization()(pipe)
-    pipe = LeakyReLU(alpha=0.05)(pipe)
-    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(pipe)
-    pipe = LeakyReLU(alpha=0.05)(pipe)
-    pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
+    # pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Reshape((pipe.shape[1].value, 64))(pipe)
@@ -182,9 +189,11 @@ def evaluate_layer(X_list, X_indices, subject):
     y_pred = model.predict(X_test)
 
     y_pred = y_pred.reshape(y_pred.shape[0] * y_pred.shape[1], y_pred.shape[2], y_pred.shape[3], params['n_channels'], int(y_pred.shape[4] / params['n_channels']))
+    min_y = min(y_pred.flatten())
+    max_y = max(y_pred.flatten())
     y_pred = np.mean(y_pred, axis=4)
     y_pred = np.mean(y_pred, axis=0)
-    return y_pred
+    return y_pred, min_y, max_y
 
 
 ''' Builds Input‐perturbation network‐prediction correlation map for a single subject '''
@@ -302,7 +311,7 @@ def visualise():
         train_index = subj_train_order[i]
         np.random.seed(123)
         X, y, epochs = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
-        X_list = build_crops(X, increment=100)
+        X_list = build_crops(X, increment=50)
         tf.reset_default_graph()
         with tf.Session() as sess:
             ''' Visualise Model '''
@@ -326,18 +335,20 @@ def visualise():
 
 def visualise_feature_maps():
     # load bci competition test data set
-    raw_edf_test, subjects_test = read_bci_data_fb.load_raw(training=True)
+    raw_edf_test, subjects_test = read_bci_data_fb.load_raw(training=False)
     subj_test_order = [ np.argwhere(np.array(subjects_test)==i+1)[0][0]
                     for i in range(len(subjects_test))]
 
-    for i in range(6,7):
+    overall_min_ys = []
+    overall_max_ys = []
+    for i in range(9):
         test_index = subj_test_order[i]
-        X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=True, drop_rejects=True, subj=test_index)
+        X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
         # Split by class
         class_data = [[X_test[y_ind] for y_ind, y in enumerate(y_test) if y == ind] for ind in range(4)]
         np.random.seed(123)
         tf.reset_default_graph()
-        y_preds_subjects = []
+        y_preds_subjects, min_ys, max_ys = [], [], []
         with tf.Session() as sess:
             y_preds = []
             for class_ind, X_list in enumerate(class_data):
@@ -349,29 +360,32 @@ def visualise_feature_maps():
                 for a in range(crops):
                     for b in range(trials):
                         X_indices.append((a, b))
-                y_pred = evaluate_layer(X_list, X_indices, i+1)
+                y_pred, min_y, max_y = evaluate_layer(X_list, X_indices, i+1)
+                print(y_pred)
                 y_preds.append(y_pred)
+                min_ys.append(min_y)
+                max_ys.append(max_y)
             y_preds = np.concatenate(y_preds, axis=-1)
-            min_y = min(y_preds[:,:,:9].flatten())
-            max_y = max(y_preds[:,:,:9].flatten())
-            print(min_y)
-            print(max_y)
-            scaler = MinMaxScaler(feature_range=(min_y, max_y))
+            min_y = min(min_ys)
+            max_y = max(max_ys)
+            overall_min_ys.append(min_y)
+            overall_max_ys.append(max_y)
+            scaler = MinMaxScaler(feature_range=(0, 1))
             shape = y_preds.shape
             y_preds = scaler.fit_transform(y_preds.flatten().reshape(-1,1))
-            print(y_preds.max())
-            print(y_preds.min())
             y_preds = y_preds.reshape(shape)
-            plot_feature_maps(y_preds, 4, 9, title="subj_train_{}".format(i))
+            plot_feature_maps(y_preds, 4, 9, title="subj_test_{}".format(i))
             y_preds_subjects.append(np.expand_dims(y_preds, axis=0))
-       
-    # y_preds_subjects = np.concatenate(y_preds_subjects, axis=0)
-    # y_preds_subjects = np.mean(y_preds_subjects, axis=0)
-    # plot_feature_maps(y_preds, 4, 9, title="subj_train_avg_layer1")
+    
+    overall_min_y = min(overall_min_ys)
+    overall_max_y = max(overall_max_ys)
+    y_preds_subjects = np.concatenate(y_preds_subjects, axis=0)
+    y_preds_subjects = np.mean(y_preds_subjects, axis=0)
+    plot_feature_maps(y_preds, 4, 9, title="subj_test_avg_layer1", vmin=overall_min_y, vmax=overall_max_y)
 
 
 if __name__ == '__main__': # if this file is been run directly by Python
     # train()
-    evaluate()
+    # evaluate()
     # visualise()
-    # visualise_feature_maps()
+    visualise_feature_maps()
