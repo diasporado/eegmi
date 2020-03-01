@@ -6,9 +6,9 @@ import gc
 import tensorflow as tf
 
 from keras.models import Model, Sequential, load_model
-from keras.layers import Dense,BatchNormalization,AveragePooling2D,MaxPooling2D,MaxPooling3D, \
-    Convolution2D,Activation,Flatten,Dropout,Convolution1D,Reshape,Conv3D,TimeDistributed,LSTM,AveragePooling2D, \
-    Input, AveragePooling3D, MaxPooling3D, concatenate, LeakyReLU, AveragePooling1D, Permute
+from keras.layers import Dense,BatchNormalization, \
+    Activation,Flatten,Dropout,Reshape,Conv3D, \
+    Input, concatenate, LeakyReLU, AveragePooling1D, Lambda
 from keras import optimizers, callbacks
 
 from DepthwiseConv3D import DepthwiseConv3D
