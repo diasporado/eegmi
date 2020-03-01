@@ -7,12 +7,11 @@ import tensorflow as tf
 
 from keras import backend as K
 from keras.models import Model, Sequential, load_model
-from keras.layers import Dense,BatchNormalization,AveragePooling2D,MaxPooling2D,MaxPooling3D,Lambda, \
-    Convolution2D,Activation,Flatten,Dropout,Convolution1D,Reshape,Conv3D,TimeDistributed,LSTM,AveragePooling3D, \
-    Input, AveragePooling3D, MaxPooling3D, concatenate, LeakyReLU, AveragePooling1D, DepthwiseConv2D
+from keras.layers import BatchNormalization, \
+    Activation,Flatten,Dropout,Reshape,Conv3D, \
+    Input, LeakyReLU, AveragePooling1D, DepthwiseConv2D, Add, Lambda, Concatenate, Dense
 from keras import optimizers, callbacks, backend as K
 
-from DepthwiseConv3D import DepthwiseConv3D
 from keras.utils.generic_utils import get_custom_objects
 from methods import se_block, build_crops, square, Square, Log, safe_log, plot_mne_vis, plot_feature_maps
 from DataGenerator import DataGenerator
@@ -44,13 +43,22 @@ get_custom_objects().update({'square': Square(square)})
 get_custom_objects().update({'log': Log(safe_log)})
     
 def layers(inputs, params=None):
-    pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
+    branch_outputs = []
+    pipe = Reshape((inputs.shape[1].value, inputs.shape[2].value * inputs.shape[3].value, inputs.shape[4].value))(inputs)
+    for i in range(n_channels):
+        # Slicing the ith channel:
+        out = Lambda(lambda x: x[:,:,:,i])(pipe)
+        out = Lambda(lambda x: K.expand_dims(x, -1))(out)
+        out = DepthwiseConv2D(kernel_size=(1,42), strides=(1,1), padding='valid', depth_multiplier=64)(out)
+        branch_outputs.append(out)
+    pipe = Add()(branch_outputs)
+    # pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
-    pipe = Dropout(0.5)(pipe)
+    # pipe = Dropout(0.5)(pipe)
     pipe = Reshape((pipe.shape[1].value, 64))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
-    # pipe = Activation('log')(pipe)
+    pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
     return pipe
 
