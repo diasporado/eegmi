@@ -29,7 +29,7 @@ from matplotlib import cm
 
 '''  Parameters '''
 folder_path = 'model_results_fb_local'
-batch_size = 512
+batch_size = 64
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 20
@@ -40,6 +40,7 @@ Training model for classification of EEG samples into motor imagery classes
 '''
 
 def layers(inputs, params=None):
+    '''
     branch_outputs = []
     for i in range(n_channels):
         # Slicing the ith channel:
@@ -52,12 +53,13 @@ def layers(inputs, params=None):
         out = DepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), padding='valid', depth_multiplier=1)(out)
         branch_outputs.append(out)
     pipe = Add()(branch_outputs)
-    # pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
-    # pipe = BatchNormalization()(pipe)
-    # pipe = LeakyReLU(alpha=0.05)(pipe)
-    # pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(pipe)
-    # pipe = LeakyReLU(alpha=0.05)(pipe)
-    # pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
+    '''
+    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
+    pipe = BatchNormalization()(pipe)
+    pipe = LeakyReLU(alpha=0.05)(pipe)
+    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=1, padding='valid', groups=params['n_channels'])(pipe)
+    pipe = LeakyReLU(alpha=0.05)(pipe)
+    pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Reshape((pipe.shape[1].value, 64))(pipe)
