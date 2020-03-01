@@ -8,7 +8,7 @@ import tensorflow as tf
 from keras.models import Model, Sequential, load_model
 from keras.layers import Dense,BatchNormalization, \
     Activation,Flatten,Dropout,Reshape,Conv3D, \
-    Input, concatenate, LeakyReLU, AveragePooling1D, Lambda
+    Input, concatenate, LeakyReLU, AveragePooling1D, Lambda, Add
 from keras import optimizers, callbacks, backend as K
 
 from DepthwiseConv3D import DepthwiseConv3D
@@ -362,7 +362,6 @@ def visualise_feature_maps():
                     for b in range(trials):
                         X_indices.append((a, b))
                 y_pred, min_y, max_y = evaluate_layer(X_list, X_indices, i+1)
-                print(y_pred)
                 y_preds.append(y_pred)
                 min_ys.append(min_y)
                 max_ys.append(max_y)
