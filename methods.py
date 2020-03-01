@@ -96,7 +96,7 @@ def plot_mne_vis(amp_pred_corrs, title=None):
     fig.tight_layout()
     fig.savefig('./output_{}.png'.format(title))    
 
-def plot_feature_maps(y_pred, row, col, title=None):
+def plot_feature_maps(y_pred, row, col, title=None, vmin=0, vmax=1):
     index = 1
     fig = plt.figure(figsize=(col,row))
     for r in range(row):
@@ -108,7 +108,7 @@ def plot_feature_maps(y_pred, row, col, title=None):
                 ax.set_xlabel(freq_bands[c], size='medium')
             ax.set_xticks([])
             ax.set_yticks([])
-            plt.imshow(y_pred[:, :, index-1], cmap='viridis')
+            plt.imshow(y_pred[:, :, index-1], cmap='viridis', norm=None, vmin=vmin, vmax=vmax)
             index += 1
     fig.tight_layout()
     fig.savefig('./feature_maps_{}.png'.format(title))  

@@ -55,11 +55,10 @@ def layers(inputs, params=None):
     pipe = Add()(branch_outputs)
     
     '''
-    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
-    pipe = BatchNormalization()(pipe)
-    pipe = LeakyReLU(alpha=0.05)(pipe)
-    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=1, padding='valid', groups=params['n_channels'])(pipe)
-    pipe = LeakyReLU(alpha=0.05)(pipe)
+    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'], activation="elu")(inputs)
+    # pipe = LeakyReLU(alpha=0.05)(pipe)
+    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=1, padding='valid', groups=params['n_channels'], activation="elu")(pipe)
+    # pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
@@ -253,7 +252,7 @@ def train():
                     for i in range(len(subjects_train))]
 
     # Iterate training on each subject separately
-    for i in [0,1,2,3,4,5,6,7,8]:
+    for i in [0]:
         train_index = subj_train_order[i]
         np.random.seed(123)
         X, y, _ = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
@@ -283,7 +282,7 @@ def evaluate(visualise=False):
                     for i in range(len(subjects_test))]
     
     # Iterate test on each subject separately
-    for i in [0,1,2,3,4,5,6,7,8]:
+    for i in [0]:
         test_index = subj_test_order[i]
         X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
         ''' Test Model '''
@@ -393,7 +392,7 @@ def visualise_feature_maps():
 
 
 if __name__ == '__main__': # if this file is been run directly by Python
-    # train()
+    train()
     evaluate()
     # visualise()
     # visualise_feature_maps()
