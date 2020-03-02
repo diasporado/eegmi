@@ -23,14 +23,14 @@ use_contrastive_center_loss = False
 n_channels = 9
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 20
+n_epoch = 25
 early_stopping = 10
 
 '''
 Training model for classification of EEG samples into motor imagery classes
 '''
 
-def layers(inputs, params=None): 
+def layers(inputs, params=None):
     pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(pipe1)
@@ -47,16 +47,17 @@ def layers(inputs, params=None):
         # Slicing the ith channel:
         out = Lambda(lambda x: x[:,:,:,i])(pipe2)
         out = Lambda(lambda x: K.expand_dims(x, -1))(out)
-        out = DepthwiseConv2D(kernel_size=(1,42), strides=(1,1), padding='valid', depth_multiplier=128)(out)
+        out = DepthwiseConv2D(kernel_size=(1,42), strides=(1,1), padding='valid', depth_multiplier=256)(out)
         branch_outputs.append(out)
     pipe2 = Add()(branch_outputs)
     # pipe2 = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe2 = BatchNormalization()(pipe2)
     pipe2 = LeakyReLU(alpha=0.05)(pipe2)
-    pipe2 = Reshape((pipe2.shape[1].value, 128))(pipe2)
+    pipe2 = Reshape((pipe2.shape[1].value, 256))(pipe2)
     pipe2 = AveragePooling1D(pool_size=(75), strides=(15))(pipe2)
 
     pipe = concatenate([pipe1, pipe2], axis=2)
+    pipe = BatchNormalization()(pipe)
     # pipe = se_block(pipe)
     # pipe = Dense(48)(pipe)
     # pipe = LeakyReLU(alpha=0.05)(pipe)
