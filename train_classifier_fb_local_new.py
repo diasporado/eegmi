@@ -52,7 +52,7 @@ def layers(inputs, params=None):
         out = LeakyReLU(alpha=0.05)(out)
         input_shape = (out.shape[1].value, out.shape[2].value, out.shape[3].value, out.shape[4].value)
         out = TimeDistributed(DepthwiseConv2D(kernel_size=(3,3), strides=(1,1), depth_multiplier=1, padding='valid'), input_shape=input_shape)(out)
-        out = BatchNormalization()(out)
+        # out = BatchNormalization()(out)
         out = LeakyReLU(alpha=0.05)(out)
         input_shape = (out.shape[1].value, out.shape[2].value, out.shape[3].value, out.shape[4].value)
         out = TimeDistributed(DepthwiseConv2D(kernel_size=(2,3), strides=(1,1), depth_multiplier=1, padding='valid'), input_shape=input_shape)(out)
