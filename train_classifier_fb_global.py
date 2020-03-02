@@ -254,8 +254,8 @@ def train():
         X_indices = np.array(X_indices)
         train_indices, val_indices = train_test_split(X_indices, test_size=0.2)
         
-        tf.reset_default_graph()
-        with tf.Session() as sess:
+        tf.compat.v1.reset_default_graph()
+        with tf.compat.v1.Session() as sess:
             train_single_subj(X_list, y, train_indices, val_indices, i+1)
             del(X)
             del(y)
@@ -282,8 +282,8 @@ def evaluate():
             for b in range(trials):
                 X_indices.append((a, b))
         np.random.seed(123)
-        tf.reset_default_graph()
-        with tf.Session() as sess:
+        tf.compat.v1.reset_default_graph()
+        with tf.compat.v1.Session() as sess:
             evaluate_single_subj(X_list, y_test, X_indices, i+1)
             del(X_test)
             del(y_test)
@@ -303,8 +303,8 @@ def visualise():
         np.random.seed(123)
         X, y, epochs = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
         X_list = build_crops(X, increment=100)
-        tf.reset_default_graph()
-        with tf.Session() as sess:
+        tf.compat.v1.reset_default_graph()
+        with tf.compat.v1.Session() as sess:
             ''' Visualise Model '''
             print("Calculating input‐perturbation network‐prediction correlation map...")
             amp_pred_corrs = build_correlation_map_single(X_list, i+1, epochs)
@@ -336,8 +336,8 @@ def visualise_feature_maps():
         # Split by class
         class_data = [[X_test[y_ind] for y_ind, y in enumerate(y_test) if y == ind] for ind in range(4)]
         np.random.seed(123)
-        tf.reset_default_graph()
-        with tf.Session() as sess:
+        tf.compat.v1.reset_default_graph()
+        with tf.compat.v1.Session() as sess:
             for X_list in class_data:
                 X_list = np.array(X_list)
                 X_list = build_crops(X_list, increment=100)
