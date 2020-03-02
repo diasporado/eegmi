@@ -252,7 +252,7 @@ def train():
                     for i in range(len(subjects_train))]
 
     # Iterate training on each subject separately
-    for i in [0]:
+    for i in [1,2]:
         train_index = subj_train_order[i]
         np.random.seed(123)
         X, y, _ = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
@@ -282,7 +282,7 @@ def evaluate(visualise=False):
                     for i in range(len(subjects_test))]
     
     # Iterate test on each subject separately
-    for i in [0]:
+    for i in [1,2]:
         test_index = subj_test_order[i]
         X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
         ''' Test Model '''
