@@ -6,8 +6,8 @@ import gc
 import tensorflow as tf
 
 from keras.models import Model, Sequential, load_model
-from keras.layers import Dense,BatchNormalization, \
-    Activation,Flatten,Dropout,Reshape,Conv3D, \
+from keras.layers import Dense,BatchNormalization, DepthwiseConv2D, Convolution2D, \
+    Activation,Flatten,Dropout,Reshape,Conv3D,TimeDistributed, \
     Input, concatenate, LeakyReLU, AveragePooling1D, Lambda, Add
 from keras import optimizers, callbacks, backend as K
 
@@ -29,10 +29,10 @@ from matplotlib import cm
 
 '''  Parameters '''
 folder_path = 'model_results_fb_local'
-batch_size = 64
+batch_size = 512
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 20
+n_epoch = 25
 early_stopping = 10
 
 '''
@@ -40,9 +40,26 @@ Training model for classification of EEG samples into motor imagery classes
 '''
 
 def layers(inputs, params=None):
-    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
-    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(pipe)
-    pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
+    
+    branch_outputs = []
+    for i in range(n_channels):
+        # Slicing the ith channel:
+        out = Lambda(lambda x: x[:,:,:,:,i])(inputs)
+        out = Lambda(lambda x: K.expand_dims(x, -1))(out)
+        input_shape = (out.shape[1].value, out.shape[2].value, out.shape[3].value, out.shape[4].value)
+        out = TimeDistributed(DepthwiseConv2D(kernel_size=(3,3), strides=(1,1), depth_multiplier=64, padding='valid'), input_shape=input_shape)(out)
+        out = LeakyReLU(alpha=0.05)(out)
+        input_shape = (out.shape[1].value, out.shape[2].value, out.shape[3].value, out.shape[4].value)
+        out = TimeDistributed(DepthwiseConv2D(kernel_size=(3,3), strides=(1,1), depth_multiplier=1, padding='valid'), input_shape=input_shape)(out)
+        out = LeakyReLU(alpha=0.05)(out)
+        input_shape = (out.shape[1].value, out.shape[2].value, out.shape[3].value, out.shape[4].value)
+        out = TimeDistributed(DepthwiseConv2D(kernel_size=(2,3), strides=(1,1), depth_multiplier=1, padding='valid'), input_shape=input_shape)(out)
+        branch_outputs.append(out)
+    pipe = Add()(branch_outputs)
+    # pipe = DepthwiseConv2D(kernel_size=(3,3), strides=(1,1), depth_multiplier=1, padding='valid')(pipe)
+    # pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
+    # pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(pipe)
+    # pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Reshape((pipe.shape[1].value, 64))(pipe)
