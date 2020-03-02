@@ -29,10 +29,10 @@ from matplotlib import cm
 
 '''  Parameters '''
 folder_path = 'model_results_fb_local'
-batch_size = 512
+batch_size = 64
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 25
+n_epoch = 100
 early_stopping = 10
 
 '''
