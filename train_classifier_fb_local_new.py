@@ -32,7 +32,7 @@ folder_path = 'model_results_fb_local'
 batch_size = 64
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 100
+n_epoch = 80
 early_stopping = 10
 
 '''
@@ -48,9 +48,11 @@ def layers(inputs, params=None):
         out = Lambda(lambda x: K.expand_dims(x, -1))(out)
         input_shape = (out.shape[1].value, out.shape[2].value, out.shape[3].value, out.shape[4].value)
         out = TimeDistributed(DepthwiseConv2D(kernel_size=(3,3), strides=(1,1), depth_multiplier=64, padding='valid'), input_shape=input_shape)(out)
+        out = BatchNormalization()(out)
         out = LeakyReLU(alpha=0.05)(out)
         input_shape = (out.shape[1].value, out.shape[2].value, out.shape[3].value, out.shape[4].value)
         out = TimeDistributed(DepthwiseConv2D(kernel_size=(3,3), strides=(1,1), depth_multiplier=1, padding='valid'), input_shape=input_shape)(out)
+        out = BatchNormalization()(out)
         out = LeakyReLU(alpha=0.05)(out)
         input_shape = (out.shape[1].value, out.shape[2].value, out.shape[3].value, out.shape[4].value)
         out = TimeDistributed(DepthwiseConv2D(kernel_size=(2,3), strides=(1,1), depth_multiplier=1, padding='valid'), input_shape=input_shape)(out)
