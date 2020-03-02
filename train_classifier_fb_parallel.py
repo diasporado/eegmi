@@ -6,9 +6,9 @@ import gc
 import tensorflow as tf
 
 from keras.models import Model, Sequential, load_model
-from keras.layers import Dense,BatchNormalization,AveragePooling2D,MaxPooling2D,MaxPooling3D, \
-    Convolution2D,Activation,Flatten,Dropout,Convolution1D,Reshape,Conv3D,TimeDistributed,LSTM,AveragePooling2D, \
-    Input, AveragePooling3D, MaxPooling3D, concatenate, LeakyReLU, AveragePooling1D, Embedding, Lambda, SpatialDropout1D
+from keras.layers import Dense,BatchNormalization, Add, \
+    Activation,Flatten,Dropout,Reshape,Conv3D,AveragePooling2D, \
+    Input, concatenate, LeakyReLU, AveragePooling1D, Embedding, Lambda
 from keras import optimizers, callbacks, backend as K
 
 from DepthwiseConv3D import DepthwiseConv3D
@@ -31,26 +31,35 @@ Training model for classification of EEG samples into motor imagery classes
 '''
 
 def layers(inputs, params=None): 
-    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=32, padding='valid', groups=params['n_channels'])(inputs)
+    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=32, padding='valid', groups=params['n_channels'])(pipe1)
+    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=1, padding='valid', groups=params['n_channels'])(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    pipe1 = Conv3D(32, (1,2,3), strides=(1,1,1), padding='valid')(pipe1)
+    pipe1 = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe1)
     pipe1 = BatchNormalization()(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    pipe1 = Reshape((pipe1.shape[1].value, 32))(pipe1)
+    pipe1 = Reshape((pipe1.shape[1].value, 64))(pipe1)
     pipe1 = AveragePooling1D(pool_size=(75), strides=(15))(pipe1)
 
-    pipe3 = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
-    pipe3 = BatchNormalization()(pipe3)
-    pipe3 = LeakyReLU(alpha=0.05)(pipe3)
-    pipe3 = Reshape((pipe3.shape[1].value, 64))(pipe3)
-    pipe3 = AveragePooling1D(pool_size=(75), strides=(15))(pipe3)
+    branch_outputs = []
+    pipe2 = Reshape((inputs.shape[1].value, inputs.shape[2].value * inputs.shape[3].value, inputs.shape[4].value))(inputs)
+    for i in range(n_channels):
+        # Slicing the ith channel:
+        out = Lambda(lambda x: x[:,:,:,i])(pipe2)
+        out = Lambda(lambda x: K.expand_dims(x, -1))(out)
+        out = DepthwiseConv2D(kernel_size=(1,42), strides=(1,1), padding='valid', depth_multiplier=128)(out)
+        branch_outputs.append(out)
+    pipe2 = Add()(branch_outputs)
+    # pipe2 = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
+    pipe2 = BatchNormalization()(pipe2)
+    pipe2 = LeakyReLU(alpha=0.05)(pipe2)
+    pipe2 = Reshape((pipe2.shape[1].value, 128))(pipe2)
+    pipe2 = AveragePooling1D(pool_size=(75), strides=(15))(pipe2)
 
-    pipe = concatenate([pipe1, pipe3], axis=2)
+    pipe = concatenate([pipe1, pipe2], axis=2)
     # pipe = se_block(pipe)
-    pipe = Dense(48)(pipe)
-    pipe = LeakyReLU(alpha=0.05)(pipe)
+    # pipe = Dense(48)(pipe)
+    # pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
     return pipe
@@ -221,7 +230,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
                     for i in range(len(subjects_test))]
 
     # Iterate training and test on each subject separately
-    for i in [3,4,5,1,0,2,6,7,8]:
+    for i in [1,3,4,5,0,2,6,7,8]:
         train_index = subj_train_order[i] 
         test_index = subj_test_order[i]
         np.random.seed(123)
@@ -236,8 +245,8 @@ if __name__ == '__main__': # if this file is been run directly by Python
         X_indices = np.array(X_indices)
         train_indices, val_indices = train_test_split(X_indices, test_size=0.2)
 
-        tf.reset_default_graph()
-        with tf.Session() as sess:
+        tf.compat.v1.reset_default_graph()
+        with tf.compat.v1.Session() as sess:
             train(X_list, y, train_indices, val_indices, i+1)
             del(X)
             del(y)
