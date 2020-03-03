@@ -274,7 +274,7 @@ def evaluate():
         test_index = subj_test_order[i]
         X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
         ''' Test Model '''
-        X_list = build_crops(X_test, increment=50)
+        X_list = build_crops(X_test, increment=5)
         X_indices = []
         crops = len(X_list)
         trials = len(X_list[0])
