@@ -28,7 +28,8 @@ from matplotlib import cm
 
 
 '''  Parameters '''
-folder_path = 'model_results_fb_local - good results'
+# folder_path = 'model_results_fb_local - good results'
+folder_path = 'model_results_fb_local'
 batch_size = 64
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
@@ -41,7 +42,7 @@ Training model for classification of EEG samples into motor imagery classes
 
 def layers(inputs, params=None):
     pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
-    pipe = BatchNormalization()(pipe)
+    # pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
@@ -330,7 +331,7 @@ def visualise_feature_maps():
 
     overall_min_ys = []
     overall_max_ys = []
-    for i in range(9):
+    for i in [0,3]:
         test_index = subj_test_order[i]
         X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
         # Split by class
@@ -360,11 +361,12 @@ def visualise_feature_maps():
             max_y = max(max_ys)
             overall_min_ys.append(min_y)
             overall_max_ys.append(max_y)
-            scaler = MinMaxScaler(feature_range=(0, 1))
-            shape = y_preds.shape
-            y_preds_scaled = scaler.fit_transform(y_preds.flatten().reshape(-1,1))
-            y_preds_scaled = y_preds_scaled.reshape(shape)
-            plot_feature_maps(y_preds_scaled, y_preds, 4, 9, title="subj_test_{}_alpha".format(i))
+            # scaler = MinMaxScaler(feature_range=(0, 1))
+            # shape = y_preds.shape
+            y_preds_scaled = []
+            # y_preds_scaled = scaler.fit_transform(y_preds.flatten().reshape(-1,1))
+            # y_preds_scaled = y_preds_scaled.reshape(shape)
+            plot_feature_maps(y_preds_scaled, y_preds, 4, 9, title="subj_{}_layer1".format(i), vmin=min_y, vmax=max_y)
     
     overall_min_y = min(overall_min_ys)
     overall_max_y = max(overall_max_ys)
@@ -374,7 +376,7 @@ def visualise_feature_maps():
     shape = y_preds_subjects.shape
     y_preds_subjects_scaled = scaler.fit_transform(y_preds_subjects.flatten().reshape(-1,1))
     y_preds_subjects_scaled = y_preds_subjects_scaled.reshape(shape)
-    plot_feature_maps(y_preds_subjects_scaled, y_preds_subjects, 4, 9, title="subj_test_avg_layer1_alpha")
+    plot_feature_maps(y_preds_subjects_scaled, y_preds_subjects, 4, 9, title="subj_test_avg_layer2")
 
 
 if __name__ == '__main__': # if this file is been run directly by Python
