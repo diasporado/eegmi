@@ -23,7 +23,7 @@ use_contrastive_center_loss = False
 n_channels = 9
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 15
+n_epoch = 20
 early_stopping = 10
 
 '''
@@ -47,7 +47,7 @@ def layers(inputs, params=None):
     pipe2 = Reshape((pipe2.shape[1].value, 64))(pipe2)
     pipe2 = AveragePooling1D(pool_size=(75), strides=(15))(pipe2)
 
-    pipe = concatenate([pipe2, pipe1], axis=2)
+    pipe = Add()([pipe2, pipe1])
     pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
     return pipe
