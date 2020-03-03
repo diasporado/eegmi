@@ -362,9 +362,9 @@ def visualise_feature_maps():
             overall_max_ys.append(max_y)
             scaler = MinMaxScaler(feature_range=(0, 1))
             shape = y_preds.shape
-            y_preds = scaler.fit_transform(y_preds.flatten().reshape(-1,1))
-            y_preds = y_preds.reshape(shape)
-            plot_feature_maps(y_preds, 4, 9, title="subj_test_{}".format(i))
+            y_preds_scaled = scaler.fit_transform(y_preds.flatten().reshape(-1,1))
+            y_preds_scaled = y_preds_scaled.reshape(shape)
+            plot_feature_maps(y_preds_scaled, y_preds, 4, 9, title="subj_test_{}_alpha".format(i))
     
     overall_min_y = min(overall_min_ys)
     overall_max_y = max(overall_max_ys)
@@ -372,9 +372,9 @@ def visualise_feature_maps():
     y_preds_subjects = np.mean(y_preds_subjects, axis=0)
     scaler = MinMaxScaler(feature_range=(0, 1))
     shape = y_preds_subjects.shape
-    y_preds_subjects = scaler.fit_transform(y_preds_subjects.flatten().reshape(-1,1))
-    y_preds_subjects = y_preds_subjects.reshape(shape)
-    plot_feature_maps(y_preds_subjects, 4, 9, title="subj_test_avg_layer1")
+    y_preds_subjects_scaled = scaler.fit_transform(y_preds_subjects.flatten().reshape(-1,1))
+    y_preds_subjects_scaled = y_preds_subjects_scaled.reshape(shape)
+    plot_feature_maps(y_preds_subjects_scaled, y_preds_subjects, 4, 9, title="subj_test_avg_layer1_alpha")
 
 
 if __name__ == '__main__': # if this file is been run directly by Python
