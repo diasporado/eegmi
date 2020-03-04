@@ -118,7 +118,7 @@ def train(X_list, y, train_indices, val_indices, subject):
         if layer.name == 'conv3d_2':
             model.layers[ind].set_weights(pretrained_model_global.layers[1].get_weights())
         if layer.name == 'batch_normalization_2':
-            model.layers[ind].set_weights(pretrained_model_local.layers[2].get_weights())
+            model.layers[ind].set_weights(pretrained_model_global.layers[2].get_weights())
         
 
     opt = optimizers.adam(lr=0.001, beta_2=0.999)
