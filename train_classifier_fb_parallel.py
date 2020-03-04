@@ -18,7 +18,8 @@ import read_bci_data_fb
 
 '''  Parameters '''
 folder_path = 'model_results_fb_parallel_SENet'
-pretrained_folder_path = 'model_results_fb_global - good results'
+pretrained_folder_path_1 = 'model_results_fb_global - good results'
+pretrained_folder_path_2 = 'model_results_fb_local - good results'
 use_center_loss = False
 use_contrastive_center_loss = False
 n_channels = 9
@@ -81,14 +82,21 @@ def train(X_list, y, train_indices, val_indices, subject):
 
     model = Model(inputs=inputs, outputs=output)
     model_path = './{}/A0{:d}_model.hdf5'.format(folder_path,subject)
-    pretrained_model_path = './{}/A0{:d}_model.hdf5'.format(pretrained_folder_path,subject)
-    pretrained_model = load_model(pretrained_model_path)
-    pretrained_model_weights = pretrained_model.layers[1].get_weights()
+    pretrained_model_path_1 = './{}/A0{:d}_model.hdf5'.format(pretrained_folder_path_1,subject)
+    pretrained_model_path_2 = './{}/A0{:d}_model.hdf5'.format(pretrained_folder_path_2,subject)
+    pretrained_model_global = load_model(pretrained_model_path_1)
+    pretrained_model_local = load_model(pretrained_model_path_2)
 
     for ind, layer in enumerate(model.layers):
+        if layer.name == 'depthwise_conv3d_1':
+            model.layers[ind].set_weights(pretrained_model_local.layers[1].get_weights())
+        if layer.name == 'depthwise_conv3d_2':
+            model.layers[ind].set_weights(pretrained_model_local.layers[3].get_weights())
+        if layer.name == 'conv3d_1':
+            model.layers[ind].set_weights(pretrained_model_local.layers[5].get_weights())
         if layer.name == 'conv3d_2':
-            model.layers[ind].set_weights(pretrained_model_weights)
-            print("Pretained weights loaded.")
+            model.layers[ind].set_weights(pretrained_model_global.layers[1].get_weights())
+        
 
     opt = optimizers.adam(lr=0.001, beta_2=0.999)
     model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
