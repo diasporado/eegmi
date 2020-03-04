@@ -18,6 +18,7 @@ import read_bci_data_fb
 
 '''  Parameters '''
 folder_path = 'model_results_fb_parallel_SENet'
+pretrained_folder_path = 'model_results_fb_global - good results'
 use_center_loss = False
 use_contrastive_center_loss = False
 n_channels = 9
@@ -43,30 +44,14 @@ def layers(inputs, params=None):
     # pipe2 = Reshape((pipe2.shape[1].value, 64))(pipe2)
     # pipe2 = AveragePooling1D(pool_size=(75), strides=(15))(pipe2)
 
-    pipe = Add()([pipe2, pipe1, pipe2])
+    pipe = Add()([pipe1, pipe2])
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Reshape((pipe.shape[1].value, 64))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
-
     pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
     return pipe
-
-def l2_loss_func(x):
-    epsilon = 1e-8
-    output_dim = x[1].shape[-2].value
-    centers = x[1][:, 0] # shape: (?, 1024)
-    expanded_centers = tf.tile(tf.expand_dims(centers, 1),
-                                [1, output_dim, 1])  # (128, 10, 2) repeated centers x128
-    expanded_features = tf.tile(tf.expand_dims(x[0], 1),
-                                 [1, output_dim, 1])  # (128, 10, 2) repeated features x10
-    distance_centers = expanded_features - expanded_centers
-    intra_distances = x[0] - centers
-    l2_loss_intra = K.sum(K.square(intra_distances), 1, keepdims=True)  # shape: (?, 1)
-    inter_distances = K.sum(distance_centers, 1, keepdims=True) - intra_distances
-    l2_loss_inter = K.sum(K.square(inter_distances), 1) + epsilon
-    return l2_loss_intra / l2_loss_inter
 
 def train(X_list, y, train_indices, val_indices, subject):
 
@@ -92,35 +77,27 @@ def train(X_list, y, train_indices, val_indices, subject):
  
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
     pipeline = layers(inputs, params)
-    # pipeline = Dense(64)(pipeline)
-    # pipeline = BatchNormalization()(pipeline)
-    # ip1 = LeakyReLU(alpha=0.05, name='ip1')(pipeline)
     output = Dense(output_dim, activation=activation)(pipeline)
-    
-    if use_center_loss or use_contrastive_center_loss:
-        lambda_c = 0.25
-        input_target = Input(shape=(1,))  # single value ground truth labels as inputs
-        centers = Embedding(input_dim=output_dim, output_dim=ip1.shape[-1].value, trainable=True)(input_target)
-        if use_center_loss:
-            l2_loss = Lambda(lambda x: K.sum(K.square(x[0] - x[1][:, 0]), 1, keepdims=True), name='l2_loss')([ip1, centers])
-        elif use_contrastive_center_loss:
-            l2_loss = Lambda(l2_loss_func, name='l2_loss')([ip1, centers])
 
-        model = Model(inputs=[inputs, input_target], outputs=[output, l2_loss])
-        model.compile(optimizer=opt,
-            loss=[loss, lambda y_true, y_pred: y_pred],
-            loss_weights=[1, lambda_c],
-            metrics=['accuracy'])
-    else:
-        model = Model(inputs=inputs, outputs=output)
-        opt = optimizers.adam(lr=0.001, beta_2=0.999)
-        model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
+    model = Model(inputs=inputs, outputs=output)
+    model_path = './{}/A0{:d}_model.hdf5'.format(folder_path,subject)
+    pretrained_model_path = './{}/A0{:d}_model.hdf5'.format(pretrained_folder_path,subject)
+    pretrained_model = load_model(pretrained_model_path)
+    pretrained_model_weights = pretrained_model.layers[1].get_weights()
+
+    for ind, layer in enumerate(model.layers):
+        if layer.name == 'conv3d_1':
+            model.layers[ind].set_weights(pretrained_model_weights)
+            print("Pretained weights loaded.")
+
+    opt = optimizers.adam(lr=0.001, beta_2=0.999)
+    model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
     
     model.summary()
 
     cb = [callbacks.ProgbarLogger(count_mode='steps'),
           callbacks.ReduceLROnPlateau(monitor='val_loss',factor=0.5,patience=3,min_lr=0.00001),
-          callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='loss',verbose=0,
+          callbacks.ModelCheckpoint(model_path,monitor='loss',verbose=0,
                                     save_best_only=True, period=1),
           callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss')]
 
@@ -154,25 +131,10 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     activation = 'softmax'
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
     pipeline = layers(inputs, params)
-    # pipeline = Dense(64)(pipeline)
-    # pipeline = BatchNormalization()(pipeline)
-    # ip1 = LeakyReLU(alpha=0.05, name='ip1')(pipeline)
     output = Dense(output_dim, activation=activation)(pipeline)
 
-    if use_center_loss or use_contrastive_center_loss:
-        lambda_c = 0.25
-        input_target = Input(shape=(1,))  # single value ground truth labels as inputs
-        centers = Embedding(input_dim=output_dim, output_dim=ip1.shape[-1].value, trainable=True)(input_target)
-        if use_center_loss:
-            l2_loss = Lambda(lambda x: K.sum(K.square(x[0] - x[1][:, 0]), 1, keepdims=True), name='l2_loss')([ip1, centers])
-        elif use_contrastive_center_loss:
-            l2_loss = Lambda(l2_loss_func, name='l2_loss')([ip1, centers])
-
-        model = Model(inputs=[inputs, input_target], outputs=[output, l2_loss])
-        model.load_weights('./{}/{}.hdf5'.format(folder_path,model_name))
-    else:
-        model = Model(inputs=inputs, outputs=output)
-        model.load_weights('./{}/{}.hdf5'.format(folder_path,model_name))
+    model = Model(inputs=inputs, outputs=output)
+    model.load_weights('./{}/{}.hdf5'.format(folder_path,model_name))
         
     test_generator = DataGenerator(X_list, y_test, X_indices, **params)
     y_pred = model.predict_generator(
