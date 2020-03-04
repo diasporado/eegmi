@@ -52,7 +52,7 @@ def layers(inputs, params=None):
         out = DepthwiseConv2D(kernel_size=(1,42), strides=(1,1), padding='valid', depth_multiplier=64)(out)
         branch_outputs.append(out)
     
-    unit = Conv3D(64, (1,1,1), strides(1,1,1), padding='valid')(branch_outputs)
+    unit = Conv3D(64, (1,1,1), strides=(1,1,1), padding='valid')(branch_outputs)
     pipe = Add()(branch_outputs + [unit])
     # pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe = BatchNormalization()(pipe)
