@@ -11,7 +11,6 @@ from keras.layers import Dense,BatchNormalization, Add, \
     Input, concatenate, LeakyReLU, AveragePooling1D, Embedding, Lambda
 from keras import optimizers, callbacks, backend as K
 
-from train_classifier_fb_local import layers as local_model_layers
 from DepthwiseConv3D import DepthwiseConv3D
 from methods import se_block, build_crops
 from DataGenerator import DataGenerator
@@ -47,6 +46,21 @@ def layers(inputs, params=None):
     # pipe2 = AveragePooling1D(pool_size=(75), strides=(15))(pipe2)
 
     pipe = Add()([pipe1, pipe2])
+    pipe = BatchNormalization()(pipe)
+    pipe = LeakyReLU(alpha=0.05)(pipe)
+    pipe = Reshape((pipe.shape[1].value, 64))(pipe)
+    pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
+    pipe = Dropout(0.5)(pipe)
+    pipe = Flatten()(pipe)
+    return pipe
+
+def local_model_layers(inputs, params=None):
+    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
+    # pipe = BatchNormalization()(pipe)
+    pipe = LeakyReLU(alpha=0.05)(pipe)
+    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(pipe)
+    pipe = LeakyReLU(alpha=0.05)(pipe)
+    pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Reshape((pipe.shape[1].value, 64))(pipe)
