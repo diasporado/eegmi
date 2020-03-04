@@ -8,7 +8,7 @@ import tensorflow as tf
 from keras import backend as K
 from keras.models import Model, Sequential, load_model
 from keras.layers import BatchNormalization, \
-    Activation,Flatten,Dropout,Reshape,Conv3D, \
+    Activation,Flatten,Dropout,Reshape,Conv3D, Convolution2D, \
     Input, LeakyReLU, AveragePooling1D, DepthwiseConv2D, Add, Lambda, Concatenate, Dense
 from keras import optimizers, callbacks, backend as K
 
@@ -52,7 +52,7 @@ def layers(inputs, params=None):
         out = DepthwiseConv2D(kernel_size=(1,42), strides=(1,1), padding='valid', depth_multiplier=64)(out)
         branch_outputs.append(out)
     
-    unit = Conv3D(64, (1,1,1), strides=(1,1,1), padding='valid')(branch_outputs[0])
+    unit = Convolution2D(64, (1,1), strides=(1,1), padding='valid')(branch_outputs[0])
     pipe = Add()(branch_outputs + [unit])
     # pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe = BatchNormalization()(pipe)
