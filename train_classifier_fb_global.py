@@ -7,7 +7,7 @@ import tensorflow as tf
 
 from keras import backend as K
 from keras.models import Model, Sequential, load_model
-from keras.layers import BatchNormalization, TimeDistributed, \
+from keras.layers import BatchNormalization, \
     Activation,Flatten,Dropout,Reshape,Conv3D, Convolution2D, \
     Input, LeakyReLU, AveragePooling1D, DepthwiseConv2D, Add, Lambda, Concatenate, Dense
 from keras import optimizers, callbacks, backend as K
@@ -50,10 +50,9 @@ def layers(inputs, params=None):
         out = Lambda(lambda x: x[:,:,:,i])(pipe)
         out = Lambda(lambda x: K.expand_dims(x, -1))(out)
         out = DepthwiseConv2D(kernel_size=(1,42), strides=(1,1), padding='valid', depth_multiplier=64)(out)
-        out = Reshape((out.shape[1].value, 64))(out)
         branch_outputs.append(out)
-        
-    unit = TimeDistributed(Dense(64), input_shape=(branch_outputs[0].shape[1].value, branch_outputs[0].shape[2].value))(branch_outputs[0])
+    
+    unit = Convolution2D(64, (1,1), strides=(1,1), padding='valid')(branch_outputs[0])
     pipe = Add()(branch_outputs + [unit])
     # pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe = BatchNormalization()(pipe)
