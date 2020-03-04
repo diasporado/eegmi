@@ -51,7 +51,7 @@ def layers(inputs, params=None):
         out = Lambda(lambda x: K.expand_dims(x, -1))(out)
         out = DepthwiseConv2D(kernel_size=(1,42), strides=(1,1), padding='valid', depth_multiplier=64)(out)
         branch_outputs.append(out)
-    pipe = Add()(branch_outputs + [unit])
+    pipe = Add()(branch_outputs)
     # pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
