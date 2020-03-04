@@ -86,7 +86,7 @@ def train(X_list, y, train_indices, val_indices, subject):
     pretrained_model_weights = pretrained_model.layers[1].get_weights()
 
     for ind, layer in enumerate(model.layers):
-        if layer.name == 'conv3d_1':
+        if layer.name == 'conv3d_2':
             model.layers[ind].set_weights(pretrained_model_weights)
             print("Pretained weights loaded.")
 
