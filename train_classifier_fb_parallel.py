@@ -11,6 +11,7 @@ from keras.layers import Dense,BatchNormalization, Add, \
     Input, concatenate, LeakyReLU, AveragePooling1D, Embedding, Lambda
 from keras import optimizers, callbacks, backend as K
 
+from train_classifier_fb_local import layers as local_model_layers
 from DepthwiseConv3D import DepthwiseConv3D
 from methods import se_block, build_crops
 from DataGenerator import DataGenerator
@@ -85,7 +86,11 @@ def train(X_list, y, train_indices, val_indices, subject):
     pretrained_model_path_1 = './{}/A0{:d}_model.hdf5'.format(pretrained_folder_path_1,subject)
     pretrained_model_path_2 = './{}/A0{:d}_model.hdf5'.format(pretrained_folder_path_2,subject)
     pretrained_model_global = load_model(pretrained_model_path_1)
-    pretrained_model_local = load_model(pretrained_model_path_2)
+    
+    local_pipeline = local_model_layers(inputs, params)
+    local_output = Dense(output_dim, activation=activation)(local_pipeline)
+    pretrained_model_local = Model(inputs=inputs, outputs=local_output)
+    pretrained_model_local.load_weights(pretrained_model_path_2)
 
     for ind, layer in enumerate(model.layers):
         if layer.name == 'depthwise_conv3d_1':
