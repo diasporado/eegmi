@@ -357,6 +357,7 @@ def visualise_feature_maps():
                     min_ys.append(min_y)
                     max_ys.append(max_y)
             y_preds = np.concatenate(y_preds, axis=-1)
+            print(y_preds)
             y_preds_subjects.append(np.expand_dims(y_preds, axis=0))
             min_y = min(min_ys)
             max_y = max(max_ys)
