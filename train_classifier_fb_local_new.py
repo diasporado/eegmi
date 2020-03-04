@@ -353,8 +353,9 @@ def visualise_feature_maps():
                         X_indices.append((a, b))
                 y_pred, min_y, max_y = evaluate_layer(X_list, X_indices, i+1)
                 y_preds.append(y_pred)
-                min_ys.append(min_y)
-                max_ys.append(max_y)
+                if class_ind == 0:
+                    min_ys.append(min_y)
+                    max_ys.append(max_y)
             y_preds = np.concatenate(y_preds, axis=-1)
             y_preds_subjects.append(np.expand_dims(y_preds, axis=0))
             min_y = min(min_ys)

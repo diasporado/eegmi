@@ -111,13 +111,13 @@ def train(X_list, y, train_indices, val_indices, subject):
             model.layers[ind].set_weights(pretrained_model_local.layers[1].get_weights())
         if layer.name == 'depthwise_conv3d_2':
             model.layers[ind].set_weights(pretrained_model_local.layers[3].get_weights())
-        if layer.name == 'batchnormalization_1':
+        if layer.name == 'batch_normalization_1':
             model.layers[ind].set_weights(pretrained_model_local.layers[6].get_weights())
         if layer.name == 'conv3d_1':
             model.layers[ind].set_weights(pretrained_model_local.layers[5].get_weights())
         if layer.name == 'conv3d_2':
             model.layers[ind].set_weights(pretrained_model_global.layers[1].get_weights())
-        if layer.name == 'batchnormalization_2':
+        if layer.name == 'batch_normalization_2':
             model.layers[ind].set_weights(pretrained_model_local.layers[2].get_weights())
         
 
