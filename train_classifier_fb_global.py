@@ -51,8 +51,6 @@ def layers(inputs, params=None):
         out = Lambda(lambda x: K.expand_dims(x, -1))(out)
         out = DepthwiseConv2D(kernel_size=(1,42), strides=(1,1), padding='valid', depth_multiplier=64)(out)
         branch_outputs.append(out)
-    
-    unit = Convolution2D(64, (1,1), strides=(1,1), padding='valid')(branch_outputs[0])
     pipe = Add()(branch_outputs + [unit])
     # pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe = BatchNormalization()(pipe)
@@ -242,7 +240,7 @@ def train():
                     for i in range(len(subjects_train))]
 
     # Iterate training on each subject separately
-    for i in range(1,9):
+    for i in range(9):
         train_index = subj_train_order[i]
         np.random.seed(123)
         X, y, _ = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
@@ -272,7 +270,7 @@ def evaluate():
                     for i in range(len(subjects_test))]
     
     # Iterate test on each subject separately
-    for i in range(1,9):
+    for i in range(9):
         test_index = subj_test_order[i]
         X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
         ''' Test Model '''
@@ -355,7 +353,7 @@ def visualise_feature_maps():
 
 if __name__ == '__main__': # if this file is been run directly by Python
     
-    # train()
+    train()
     evaluate()
     # visualise()
     # visualise_feature_maps()
