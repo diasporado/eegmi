@@ -119,7 +119,7 @@ def plot_feature_maps(y_pred, y_pred_original, row, col, title=None, vmin=0, vma
             ax.set_xticks([])
             ax.set_yticks([])
             # plt.imshow(y_pred[:, :, index-1], cmap='viridis', norm=None, vmin=vmin, vmax=vmax)
-            plt.imshow(y_pred_original[:, :, index-1], cmap='viridis', norm=None, vmin=vmin, vmax=vmax)
+            plt.imshow(y_pred_original[:, :, index-1], cmap='viridis', vmin=vmin, vmax=vmax)
             # plt.imshow(y_pred_original[:, :, index-1], cmap=my_cmap)
             index += 1
     fig.tight_layout()

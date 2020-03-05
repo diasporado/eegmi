@@ -363,12 +363,12 @@ def visualise_feature_maps():
             max_y = max(max_ys)
             overall_min_ys.append(min_y)
             overall_max_ys.append(max_y)
-            # scaler = MinMaxScaler(feature_range=(0, 1))
-            # shape = y_preds.shape
+            scaler = MinMaxScaler(feature_range=(0, 1))
+            shape = y_preds.shape
             y_preds_scaled = []
-            # y_preds_scaled = scaler.fit_transform(y_preds.flatten().reshape(-1,1))
-            # y_preds_scaled = y_preds_scaled.reshape(shape)
-            plot_feature_maps(y_preds_scaled, y_preds, 4, 9, title="subj_{}_layer1".format(i), vmin=min_y, vmax=max_y)
+            y_preds_scaled = scaler.fit_transform(y_preds.flatten().reshape(-1,1))
+            y_preds_scaled = y_preds_scaled.reshape(shape)
+            plot_feature_maps(y_preds_scaled, y_preds, 4, 9, title="subj_{}_layer1".format(i), vmin=0, vmax=1)
     
     overall_min_y = min(overall_min_ys)
     overall_max_y = max(overall_max_ys)
