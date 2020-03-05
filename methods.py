@@ -16,7 +16,7 @@ all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 ch_names = ['Fz', 'FC3', 'FC1', 'FCz', 'FC2', 'FC4', 'C5', 'C3', 'C1', 'Cz', 'C2', 'C4', 'C6', 'CP3', 'CP1', 'CPz', 'CP2', 'CP4', 'P1', 'Pz', 'P2', 'POz']
 freq_bands = ['4-8Hz', '8-12Hz', '12-16Hz', '16-20Hz', '20-24Hz', '24-28Hz', '28-32Hz', '32-36Hz', '36-40Hz']
 # Choose colormap
-cmap = pl.cm.viridis
+# cmap = pl.cm.viridis
 
 ''' Custom Activation Function '''
 def square(x):
@@ -101,11 +101,11 @@ def plot_mne_vis(amp_pred_corrs, title=None):
 
 def plot_feature_maps(y_pred, y_pred_original, row, col, title=None, vmin=0, vmax=1):
     # new cmap
-    my_cmap = cmap(np.arange(cmap.N))
+    # my_cmap = cmap(np.arange(cmap.N))
     # Set alpha
-    my_cmap[:,-1] = np.linspace(0, 1, cmap.N)
+    # my_cmap[:,-1] = np.linspace(0, 1, cmap.N)
     # Create new colormap
-    my_cmap = ListedColormap(my_cmap)
+    # my_cmap = ListedColormap(my_cmap)
 
     index = 1
     fig = plt.figure(figsize=(col,row))
@@ -118,7 +118,7 @@ def plot_feature_maps(y_pred, y_pred_original, row, col, title=None, vmin=0, vma
                 ax.set_xlabel(freq_bands[c], size='medium')
             ax.set_xticks([])
             ax.set_yticks([])
-            plt.imshow(y_pred_original[:, :, index-1], cmap='viridis', norm=None, vmin=vmin, vmax=vmax)
+            plt.imshow(y_pred[:, :, index-1], cmap='viridis', norm=None, vmin=vmin, vmax=vmax)
             # plt.imshow(y_pred_original[:, :, index-1], cmap=my_cmap)
             index += 1
     fig.tight_layout()

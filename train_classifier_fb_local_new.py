@@ -353,20 +353,19 @@ def visualise_feature_maps():
                         X_indices.append((a, b))
                 y_pred, min_y, max_y = evaluate_layer(X_list, X_indices, i+1)
                 y_preds.append(y_pred)
-                if class_ind == 0:
-                    min_ys.append(min_y)
-                    max_ys.append(max_y)
+                min_ys.append(min_y)
+                max_ys.append(max_y)
             y_preds = np.concatenate(y_preds, axis=-1)
             y_preds_subjects.append(np.expand_dims(y_preds, axis=0))
             min_y = min(min_ys)
             max_y = max(max_ys)
             overall_min_ys.append(min_y)
             overall_max_ys.append(max_y)
-            # scaler = MinMaxScaler(feature_range=(0, 1))
-            # shape = y_preds.shape
-            y_preds_scaled = []
-            # y_preds_scaled = scaler.fit_transform(y_preds.flatten().reshape(-1,1))
-            # y_preds_scaled = y_preds_scaled.reshape(shape)
+            scaler = MinMaxScaler(feature_range=(0, 1))
+            shape = y_preds.shape
+            # y_preds_scaled = []
+            y_preds_scaled = scaler.fit_transform(y_preds.flatten().reshape(-1,1))
+            y_preds_scaled = y_preds_scaled.reshape(shape)
             plot_feature_maps(y_preds_scaled, y_preds, 4, 9, title="subj_{}_layer1".format(i), vmin=min_y, vmax=max_y)
     
     overall_min_y = min(overall_min_ys)
