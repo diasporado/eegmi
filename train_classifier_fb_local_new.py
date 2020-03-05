@@ -178,7 +178,7 @@ def evaluate_layer(X_list, X_indices, subject):
     X_test = X_test.reshape(X_test.shape[0] * X_test.shape[1], X_test.shape[2], X_test.shape[3], X_test.shape[4], X_test.shape[5])
     y_pred = model.predict(X_test)
 
-    y_pred = y_pred.reshape(y_pred.shape[0] * y_pred.shape[1], y_pred.shape[2], y_pred.shape[3], params['n_channels'], int(y_pred.shape[4] / params['n_channels']))
+    y_pred = y_pred.reshape(y_pred.shape[0] * y_pred.shape[1], y_pred.shape[2], y_pred.shape[3], int(y_pred.shape[4] / params['n_channels']), params['n_channels'])
     min_y = min(y_pred.flatten())
     max_y = max(y_pred.flatten())
     y_pred = np.mean(y_pred, axis=4)
@@ -357,18 +357,17 @@ def visualise_feature_maps():
                     min_ys.append(min_y)
                     max_ys.append(max_y)
             y_preds = np.concatenate(y_preds, axis=-1)
-            print(y_preds)
             y_preds_subjects.append(np.expand_dims(y_preds, axis=0))
             min_y = min(min_ys)
             max_y = max(max_ys)
             overall_min_ys.append(min_y)
             overall_max_ys.append(max_y)
-            scaler = MinMaxScaler(feature_range=(0, 1))
-            shape = y_preds.shape
+            # scaler = MinMaxScaler(feature_range=(0, 1))
+            # shape = y_preds.shape
             y_preds_scaled = []
-            y_preds_scaled = scaler.fit_transform(y_preds.flatten().reshape(-1,1))
-            y_preds_scaled = y_preds_scaled.reshape(shape)
-            plot_feature_maps(y_preds_scaled, y_preds, 4, 9, title="subj_{}_layer1".format(i), vmin=0, vmax=1)
+            # y_preds_scaled = scaler.fit_transform(y_preds.flatten().reshape(-1,1))
+            # y_preds_scaled = y_preds_scaled.reshape(shape)
+            plot_feature_maps(y_preds_scaled, y_preds, 4, 9, title="subj_{}_layer1".format(i), vmin=min_y, vmax=max_y)
     
     overall_min_y = min(overall_min_ys)
     overall_max_y = max(overall_max_ys)
