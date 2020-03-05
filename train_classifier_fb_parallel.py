@@ -25,7 +25,7 @@ use_contrastive_center_loss = False
 n_channels = 9
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 15
+n_epoch = 25
 early_stopping = 10
 
 '''
@@ -231,7 +231,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
 
         tf.compat.v1.reset_default_graph()
         with tf.compat.v1.Session() as sess:
-            # train(X_list, y, train_indices, val_indices, i+1)
+            train(X_list, y, train_indices, val_indices, i+1)
             del(X)
             del(y)
             del(X_list)
