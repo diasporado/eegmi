@@ -49,7 +49,7 @@ def layers(inputs, params=None):
     pipe2 = LeakyReLU(alpha=0.05)(pipe2)
     pipe2 = Reshape((pipe2.shape[1].value, 64))(pipe2)
     pipe2 = AveragePooling1D(pool_size=(75), strides=(15))(pipe2)
-    pipe2 = Dropout(0.1)(pipe2)
+    pipe2 = Dropout(0.2)(pipe2)
 
     pipe = concatenate([pipe1, pipe2], axis=2)
     pipe = Flatten()(pipe)
@@ -214,8 +214,8 @@ if __name__ == '__main__': # if this file is been run directly by Python
                     for i in range(len(subjects_test))]
 
     # Iterate training and test on each subject separately
-    for i in [3,4,5,0,2,6,7,8,1]:
-        train_index = subj_train_order[i] 
+    for i in [1,3,4,5,0,2,6,7,8]:
+        train_index = subj_train_order[i]
         test_index = subj_test_order[i]
         np.random.seed(123)
         X, y, _ = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
