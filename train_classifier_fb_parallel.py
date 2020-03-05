@@ -17,7 +17,7 @@ from DataGenerator import DataGenerator
 import read_bci_data_fb
 
 '''  Parameters '''
-folder_path = 'model_results_fb_parallel_SENet'
+folder_path = 'model_results_fb_parallel_2'
 pretrained_folder_path_1 = 'model_results_fb_global - good results'
 pretrained_folder_path_2 = 'model_results_fb_local - good results'
 use_center_loss = False
