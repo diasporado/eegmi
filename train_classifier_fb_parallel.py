@@ -25,7 +25,7 @@ use_contrastive_center_loss = False
 n_channels = 9
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 10
+n_epoch = 15
 early_stopping = 10
 
 '''
@@ -50,9 +50,7 @@ def layers(inputs, params=None):
     pipe2 = AveragePooling1D(pool_size=(75), strides=(15))(pipe2)
 
     pipe = concatenate([pipe1, pipe2], axis=2)
-    pipe = Dense(64)(pipe)
-    pipe = LeakyReLU(alpha=0.05)(pipe)
-    pipe = Dropout(0.2)(pipe)
+    pipe = Dropout(0.1)(pipe)
     pipe = Flatten()(pipe)
     return pipe
 
@@ -108,6 +106,7 @@ def train(X_list, y, train_indices, val_indices, subject):
     pretrained_model_local = Model(inputs=inputs, outputs=local_output)
     pretrained_model_local.load_weights(pretrained_model_path_2)
 
+    '''
     for ind, layer in enumerate(model.layers):
         if layer.name == 'depthwise_conv3d_1':
             model.layers[ind].set_weights(pretrained_model_local.layers[1].get_weights())
@@ -121,7 +120,7 @@ def train(X_list, y, train_indices, val_indices, subject):
             model.layers[ind].set_weights(pretrained_model_global.layers[1].get_weights())
         if layer.name == 'batch_normalization_2':
             model.layers[ind].set_weights(pretrained_model_global.layers[2].get_weights())
-        
+    '''
 
     opt = optimizers.adam(lr=0.001, beta_2=0.999)
     model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
