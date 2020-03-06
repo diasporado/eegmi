@@ -25,8 +25,8 @@ use_contrastive_center_loss = False
 n_channels = 9
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 10
-early_stopping = 10
+n_epoch = 20
+early_stopping = 20
 
 '''
 Training model for classification of EEG samples into motor imagery classes
@@ -51,8 +51,9 @@ def layers(inputs, params=None):
 
     #pipe = concatenate([pipe1, pipe2], axis=2)
     pipe = Add()([pipe1, pipe2])
+    pipe = concatenate([pipe, pipe1, pipe2], axis=2)
     pipe = Flatten()(pipe)
-    pipe = Dropout(0.25)(pipe)
+    pipe = Dropout(0.5)(pipe)
     return pipe
 
 def local_model_layers(inputs, params=None):
