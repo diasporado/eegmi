@@ -28,11 +28,11 @@ from matplotlib import cm
 
 '''  Parameters '''
 folder_path = 'model_results_fb_global_2'
-batch_size = 512
+batch_size = 64
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 channel_indices = [3,8,9,10,11,12,14,15,16,17,18,19,20,22,23,24,25,26,30,31,32,38]
-n_epoch = 40
+n_epoch = 100
 early_stopping = 10
 
 '''
@@ -51,14 +51,15 @@ def layers(inputs, params=None):
         out = Lambda(lambda x: K.expand_dims(x, -1))(out)
         out = DepthwiseConv2D(kernel_size=(1,42), strides=(1,1), padding='valid', depth_multiplier=64)(out)
         branch_outputs.append(out)
-    pipe = Add()(branch_outputs)
+    unit = Convolution2D(1, (1,1), strides=(1,1), padding='valid')(branch_outputs[0])
+    pipe = Add()(branch_outputs + [unit])
     # pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
-    pipe = BatchNormalization()(pipe)
+    # pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     # pipe = Dropout(0.5)(pipe)
     pipe = Reshape((pipe.shape[1].value, 64))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
-    pipe = Dropout(0.5)(pipe)
+    pipe = Dropout(0.2)(pipe)
     pipe = Flatten()(pipe)
     return pipe
 
@@ -88,10 +89,10 @@ def train_single_subj(X_list, y, train_indices, val_indices, subject):
     output = Dense(output_dim, activation=activation)(pipeline)
     model = Model(inputs=inputs, outputs=output)
 
-    opt = optimizers.adam(lr=0.01, beta_2=0.999)
+    opt = optimizers.adam(lr=0.005, beta_2=0.999)
     model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
     cb = [callbacks.ProgbarLogger(count_mode='steps'),
-          callbacks.ReduceLROnPlateau(monitor='val_loss',factor=0.5,patience=3,min_lr=0.000001),
+          callbacks.ReduceLROnPlateau(monitor='val_loss',factor=0.5,patience=5,min_lr=0.000001),
           callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='loss',verbose=0,
                                     save_best_only=True, period=1),
           callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss')]
