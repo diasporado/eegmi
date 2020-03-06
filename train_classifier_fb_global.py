@@ -27,12 +27,12 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 
 '''  Parameters '''
-folder_path = 'model_results_fb_global'
+folder_path = 'model_results_fb_global_2'
 batch_size = 512
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 channel_indices = [3,8,9,10,11,12,14,15,16,17,18,19,20,22,23,24,25,26,30,31,32,38]
-n_epoch = 100
+n_epoch = 40
 early_stopping = 10
 
 '''
