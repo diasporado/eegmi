@@ -11,7 +11,7 @@ from keras.layers import Dense,BatchNormalization, Add, \
     Input, concatenate, LeakyReLU, AveragePooling1D, Embedding, Lambda
 from keras import optimizers, callbacks, backend as K
 
-from DepthwiseConv3D import DepthwiseConv3D
+from GroupDepthwiseConv3D import DepthwiseConv3D
 from methods import se_block, build_crops
 from DataGenerator import DataGenerator
 import read_bci_data_fb
@@ -33,14 +33,14 @@ Training model for classification of EEG samples into motor imagery classes
 '''
 
 def layers(inputs, params=None):
-    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
+    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), group_multiplier=64, padding='valid')(inputs)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=1, padding='valid', groups=576)(pipe1)
+    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), group_multiplier=1, padding='valid')(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    pipe1 = DepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), depth_multiplier=1, padding='valid', groups=576)(pipe1)
+    pipe1 = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe1)
     pipe1 = BatchNormalization()(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    pipe1 = Reshape((pipe1.shape[1].value, 576))(pipe1)
+    pipe1 = Reshape((pipe1.shape[1].value, 64))(pipe1)
     pipe1 = Dense(64)(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     pipe1 = AveragePooling1D(pool_size=(75), strides=(15))(pipe1)
