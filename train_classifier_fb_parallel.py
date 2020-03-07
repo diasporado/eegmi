@@ -40,7 +40,7 @@ def layers(inputs, params=None):
     pipe1 = DepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), group_multiplier=1, padding='valid')(pipe1)
     # pipe1 = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    pipe1 = Reshape((pipe1.shape[1].value, 64))(pipe1)
+    pipe1 = Reshape((pipe1.shape[1].value, 576))(pipe1)
     pipe1 = Dense(64)(pipe1)
     pipe1 = BatchNormalization()(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
