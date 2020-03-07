@@ -25,8 +25,8 @@ use_contrastive_center_loss = False
 n_channels = 9
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 20
-early_stopping = 20
+n_epoch = 40
+early_stopping = 15
 
 '''
 Training model for classification of EEG samples into motor imagery classes
