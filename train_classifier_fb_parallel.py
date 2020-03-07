@@ -103,6 +103,7 @@ def train(X_list, y, train_indices, val_indices, subject):
 
     model = Model(inputs=inputs, outputs=output)
     model_path = './{}/A0{:d}_model.hdf5'.format(folder_path,subject)
+    '''
     pretrained_model_path_1 = './{}/A0{:d}_model.hdf5'.format(pretrained_folder_path_1,subject)
     pretrained_model_path_2 = './{}/A0{:d}_model.hdf5'.format(pretrained_folder_path_2,subject)
     pretrained_model_global = load_model(pretrained_model_path_1)
@@ -112,7 +113,7 @@ def train(X_list, y, train_indices, val_indices, subject):
     pretrained_model_local = Model(inputs=inputs, outputs=local_output)
     pretrained_model_local.load_weights(pretrained_model_path_2)
 
-    '''
+    
     for ind, layer in enumerate(model.layers):
         if layer.name == 'depthwise_conv3d_1':
             model.layers[ind].set_weights(pretrained_model_local.layers[1].get_weights())

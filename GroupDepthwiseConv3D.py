@@ -279,4 +279,4 @@ class GroupDepthwiseConv3D(Conv3D):
         return config
 
 
-DepthwiseConvolution3D = DepthwiseConv3D = GroupConvolution3D = GroupConv3D = 
+DepthwiseConvolution3D = DepthwiseConv3D = GroupConvolution3D = GroupConv3D = GroupDepthwiseConv3D
