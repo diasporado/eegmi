@@ -118,7 +118,7 @@ class DepthwiseConv3D(Conv3D):
         `rows` and `cols` values might have changed due to padding.
     """
 
-    #@legacy_depthwise_conv3d_support
+    @legacy_depthwise_conv3d_support
     def __init__(self,
                  kernel_size,
                  strides=(1, 1, 1),
