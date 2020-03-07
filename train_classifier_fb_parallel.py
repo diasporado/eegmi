@@ -35,7 +35,7 @@ Training model for classification of EEG samples into motor imagery classes
 def layers(inputs, params=None):
     pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=1)(pipe1)
+    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=1, padding='valid', groups=64*params['n_channels'])(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     pipe1 = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe1)
     pipe1 = BatchNormalization()(pipe1)
