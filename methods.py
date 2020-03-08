@@ -9,7 +9,7 @@ matplotlib.use('Agg')
 import matplotlib.pylab as pl
 import matplotlib.pyplot as plt
 from matplotlib import cm
-from matplotlib.colors import ListedColormap
+from matplotlib.colors import ListedColormap, Normalize
 
 ''' Constants '''
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
@@ -100,12 +100,13 @@ def plot_mne_vis(amp_pred_corrs, title=None):
     fig.savefig('./output_{}.png'.format(title))    
 
 def plot_feature_maps(y_pred, y_pred_original, row, col, title=None, vmin=0, vmax=1):
-    # new cmap
     # my_cmap = cmap(np.arange(cmap.N))
     # Set alpha
-    # my_cmap[:,-1] = np.linspace(0, 1, cmap.N)
+    # my_cmap[:,-1] = np.linspace(vmin, vmax, cmap.N)
     # Create new colormap
     # my_cmap = ListedColormap(my_cmap)
+
+    norm = Normalize(vmin=-1, vmax=1)
 
     index = 1
     fig = plt.figure(figsize=(col,row))
@@ -118,7 +119,7 @@ def plot_feature_maps(y_pred, y_pred_original, row, col, title=None, vmin=0, vma
                 ax.set_xlabel(freq_bands[c], size='medium')
             ax.set_xticks([])
             ax.set_yticks([])
-            plt.imshow(y_pred[:, :, index-1], cmap='viridis', norm=None, vmin=vmin, vmax=vmax)
+            plt.imshow(y_pred_original[:, :, index-1], cmap='viridis', norm=norm)# , vmin=vmin, vmax=vmax)
             # plt.imshow(y_pred_original[:, :, index-1], cmap=my_cmap)
             index += 1
     fig.tight_layout()
