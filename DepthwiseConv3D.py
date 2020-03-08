@@ -160,20 +160,17 @@ class DepthwiseConv3D(Conv3D):
         self._padding = _preprocess_padding(self.padding)
         self._strides = (1,) + self.strides + (1,)
         self._data_format = "NDHWC"
+        self.channel_axis = -1
 
     def build(self, input_shape):
         if len(input_shape) < 5:
-            raise ValueError('Inputs to `DepthwiseConv3D` should have rank 5. '
+            raise ValueError('Inputs to `conv3d` should have rank 5. '
                              'Received input shape:', str(input_shape))
-        if self.data_format == 'channels_first':
-            channel_axis = 1
-        else:
-            channel_axis = -1
-        if input_shape[channel_axis] is None:
+        if input_shape[self.channel_axis] is None:
             raise ValueError('The channel dimension of the inputs to '
-                             '`DepthwiseConv3D` '
+                             '`conv3d` '
                              'should be defined. Found `None`.')
-        self.input_dim = int(input_shape[channel_axis])
+        self.input_dim = int(input_shape[self.channel_axis])
 
         if (self.groups == None):
             self.groups = self.input_dim
@@ -183,8 +180,6 @@ class DepthwiseConv3D(Conv3D):
 
         if (self.input_dim % self.groups != 0):
             raise ValueError('Warning! The channels dimension is not devisible by the group size chosen')
-
-        
 
         depthwise_kernel_shape = (self.kernel_size[0],
                                   self.kernel_size[1],
@@ -209,7 +204,7 @@ class DepthwiseConv3D(Conv3D):
         else:
             self.bias = None
         # Set input spec.
-        self.input_spec = InputSpec(ndim=5, axes={channel_axis: self.input_dim})
+        self.input_spec = InputSpec(ndim=5, axes={self.channel_axis: self.input_dim})
         self.built = True
 
     def call(self, inputs, training=None):
@@ -219,6 +214,8 @@ class DepthwiseConv3D(Conv3D):
             dilation = (1,) + tuple(self.dilation_rate) + (1,)
         else:
             dilation = tuple(self.dilation_rate) + (1,) + (1,)
+        
+        inputs = tf.split(inputs[0], self.group_num, axis=self.channel_axis)
 
         if self._data_format == 'NCDHW' :
             outputs = tf.concat(
