@@ -33,10 +33,21 @@ Training model for classification of EEG samples into motor imagery classes
 '''
 
 def layers(inputs, params=None):
-    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=7, padding='valid', groups=9)(inputs)
-    pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=7, padding='valid', groups=64)(pipe1)
-    pipe1 = LeakyReLU(alpha=0.05)(pipe1)
+    branch_outputs = []
+    for i in range(n_channels):
+        # Slicing the ith channel:
+        out = Lambda(lambda x: x[:,:,:,:,i])(pipe)
+        out = Lambda(lambda x: K.expand_dims(x, -1))(out)
+        out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=64, groups=1)(out)
+        out = LeakyReLU(alpha=0.05)(out)
+        out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=1, groups=64)(out)
+        out = LeakyReLU(alpha=0.05)(out)
+        branch_outputs.append(out)
+    pipe1 = Add()(branch_outputs)
+    # pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=7, padding='valid', groups=9)(inputs)
+    # pipe1 = LeakyReLU(alpha=0.05)(pipe1)
+    # pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=7, padding='valid', groups=64)(pipe1)
+    # pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     pipe1 = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe1)
     pipe1 = BatchNormalization()(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
