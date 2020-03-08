@@ -47,12 +47,12 @@ def layers(inputs, params=None):
     pipe2 = BatchNormalization()(pipe2)
     pipe2 = LeakyReLU(alpha=0.05)(pipe2)
     pipe2 = Reshape((pipe2.shape[1].value, pipe2.shape[-1].value))(pipe2)
-    pipe2 = Dense(64)(pipe2)
-    pipe2 = LeakyReLU(alpha=0.05)(pipe2)
     pipe2 = AveragePooling1D(pool_size=(75), strides=(15))(pipe2)
 
     #pipe = concatenate([pipe1, pipe2], axis=2)
-    pipe = Add()([pipe1, pipe2])
+    pipe = Dense(64)(pipe2)
+    pipe = LeakyReLU(alpha=0.05)(pipe)
+    pipe = Add()([pipe, pipe1])
     pipe = concatenate([pipe, pipe1, pipe2], axis=2)
     pipe = Flatten()(pipe)
     pipe = Dropout(0.5)(pipe)
@@ -218,7 +218,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
                     for i in range(len(subjects_test))]
 
     # Iterate training and test on each subject separately
-    for i in [3,4,5,0,2,6,7,8]:
+    for i in [1,3,4,5,0,2,6,7,8]:
         train_index = subj_train_order[i]
         test_index = subj_test_order[i]
         np.random.seed(123)
@@ -235,7 +235,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
 
         tf.compat.v1.reset_default_graph()
         with tf.compat.v1.Session() as sess:
-            # train(X_list, y, train_indices, val_indices, i+1)
+            train(X_list, y, train_indices, val_indices, i+1)
             del(X)
             del(y)
             del(X_list)
