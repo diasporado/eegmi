@@ -171,7 +171,7 @@ def evaluate_layer(X_list, X_indices, subject):
     output = Dense(output_dim)(pipeline)
     model = Model(inputs=inputs, outputs=output)
     model.load_weights('./{}/{}.hdf5'.format(folder_path, model_name))
-    model = Model(inputs=model.inputs, outputs=model.layers[3].output)
+    model = Model(inputs=model.inputs, outputs=model.layers[1].output)
     model.summary()
     
     X_test = np.array(X_list)
@@ -366,7 +366,7 @@ def visualise_feature_maps():
             # y_preds_scaled = []
             y_preds_scaled = scaler.fit_transform(y_preds.flatten().reshape(-1,1))
             y_preds_scaled = y_preds_scaled.reshape(shape)
-            plot_feature_maps(y_preds_scaled, y_preds, 4, 9, title="subj_{}_layer2_lefthand_2".format(i), vmin=min_y, vmax=max_y)
+            plot_feature_maps(y_preds_scaled, y_preds, 4, 9, title="subj_{}_layer1".format(i), vmin=min_y, vmax=max_y)
     '''
     overall_min_y = min(overall_min_ys)
     overall_max_y = max(overall_max_ys)

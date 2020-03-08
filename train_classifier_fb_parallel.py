@@ -33,9 +33,9 @@ Training model for classification of EEG samples into motor imagery classes
 '''
 
 def layers(inputs, params=None):
-    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=9)(inputs)
+    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=1)(inputs)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=9)(pipe1)
+    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=1)(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     pipe1 = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe1)
     pipe1 = BatchNormalization()(pipe1)
@@ -43,16 +43,14 @@ def layers(inputs, params=None):
     pipe1 = Reshape((pipe1.shape[1].value, pipe1.shape[-1].value))(pipe1)
     pipe1 = AveragePooling1D(pool_size=(75), strides=(15))(pipe1)
 
-    pipe2 = Conv3D(512, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
+    pipe2 = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe2 = BatchNormalization()(pipe2)
     pipe2 = LeakyReLU(alpha=0.05)(pipe2)
     pipe2 = Reshape((pipe2.shape[1].value, pipe2.shape[-1].value))(pipe2)
     pipe2 = AveragePooling1D(pool_size=(75), strides=(15))(pipe2)
 
     #pipe = concatenate([pipe1, pipe2], axis=2)
-    pipe = Dense(64)(pipe2)
-    pipe = LeakyReLU(alpha=0.05)(pipe)
-    pipe = Add()([pipe, pipe1])
+    pipe = Add()([pipe1, pipe2])
     pipe = concatenate([pipe, pipe1, pipe2], axis=2)
     pipe = Flatten()(pipe)
     pipe = Dropout(0.5)(pipe)
