@@ -215,7 +215,7 @@ class DepthwiseConv3D(Conv3D):
         else:
             dilation = tuple(self.dilation_rate) + (1,) + (1,)
         
-        inputs = tf.split(inputs[0], self.group_num, axis=self.channel_axis)
+        # inputs = tf.split(inputs[0], self.group_num, axis=self.channel_axis)
 
         if self._data_format == 'NCDHW' :
             outputs = tf.concat(
