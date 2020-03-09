@@ -25,28 +25,39 @@ use_contrastive_center_loss = False
 n_channels = 9
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 20
-early_stopping = 20
+n_epoch = 15
+early_stopping = 10
 
 '''
 Training model for classification of EEG samples into motor imagery classes
 '''
 
 def layers(inputs, params=None):
-    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
-    pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(pipe1)
-    pipe1 = LeakyReLU(alpha=0.05)(pipe1)
+    branch_outputs = []
+    for i in range(n_channels):
+        # Slicing the ith channel:
+        out = Lambda(lambda x: x[:,:,:,:,i])(inputs)
+        out = Lambda(lambda x: K.expand_dims(x, -1))(out)
+        out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=64, groups=1)(out)
+        out = LeakyReLU(alpha=0.05)(out)
+        out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=1, groups=64)(out)
+        out = LeakyReLU(alpha=0.05)(out)
+        branch_outputs.append(out)
+    pipe1 = Add()(branch_outputs)
+    # pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=7, padding='valid', groups=9)(inputs)
+    # pipe1 = LeakyReLU(alpha=0.05)(pipe1)
+    # pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=7, padding='valid', groups=64)(pipe1)
+    # pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     pipe1 = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe1)
     pipe1 = BatchNormalization()(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    pipe1 = Reshape((pipe1.shape[1].value, 64))(pipe1)
+    pipe1 = Reshape((pipe1.shape[1].value, pipe1.shape[-1].value))(pipe1)
     pipe1 = AveragePooling1D(pool_size=(75), strides=(15))(pipe1)
 
     pipe2 = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe2 = BatchNormalization()(pipe2)
     pipe2 = LeakyReLU(alpha=0.05)(pipe2)
-    pipe2 = Reshape((pipe2.shape[1].value, 64))(pipe2)
+    pipe2 = Reshape((pipe2.shape[1].value, pipe2.shape[-1].value))(pipe2)
     pipe2 = AveragePooling1D(pool_size=(75), strides=(15))(pipe2)
 
     #pipe = concatenate([pipe1, pipe2], axis=2)
@@ -99,6 +110,7 @@ def train(X_list, y, train_indices, val_indices, subject):
 
     model = Model(inputs=inputs, outputs=output)
     model_path = './{}/A0{:d}_model.hdf5'.format(folder_path,subject)
+    '''
     pretrained_model_path_1 = './{}/A0{:d}_model.hdf5'.format(pretrained_folder_path_1,subject)
     pretrained_model_path_2 = './{}/A0{:d}_model.hdf5'.format(pretrained_folder_path_2,subject)
     pretrained_model_global = load_model(pretrained_model_path_1)
@@ -108,7 +120,7 @@ def train(X_list, y, train_indices, val_indices, subject):
     pretrained_model_local = Model(inputs=inputs, outputs=local_output)
     pretrained_model_local.load_weights(pretrained_model_path_2)
 
-    '''
+    
     for ind, layer in enumerate(model.layers):
         if layer.name == 'depthwise_conv3d_1':
             model.layers[ind].set_weights(pretrained_model_local.layers[1].get_weights())

@@ -178,7 +178,7 @@ def evaluate_layer(X_list, X_indices, subject):
     X_test = X_test.reshape(X_test.shape[0] * X_test.shape[1], X_test.shape[2], X_test.shape[3], X_test.shape[4], X_test.shape[5])
     y_pred = model.predict(X_test)
 
-    y_pred = y_pred.reshape(y_pred.shape[0] * y_pred.shape[1], y_pred.shape[2], y_pred.shape[3], int(y_pred.shape[4] / params['n_channels']), params['n_channels'])
+    y_pred = y_pred.reshape(y_pred.shape[0] * y_pred.shape[1], y_pred.shape[2], y_pred.shape[3], params['n_channels'], int(y_pred.shape[4] / params['n_channels']))
     min_y = min(y_pred.flatten())
     max_y = max(y_pred.flatten())
     y_pred = np.mean(y_pred, axis=4)
@@ -331,7 +331,7 @@ def visualise_feature_maps():
 
     overall_min_ys = []
     overall_max_ys = []
-    for i in [0,3]:
+    for i in [6]:
         test_index = subj_test_order[i]
         X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
         # Split by class
@@ -359,15 +359,15 @@ def visualise_feature_maps():
             y_preds_subjects.append(np.expand_dims(y_preds, axis=0))
             min_y = min(min_ys)
             max_y = max(max_ys)
-            overall_min_ys.append(min_y)
-            overall_max_ys.append(max_y)
-            scaler = MinMaxScaler(feature_range=(0, 1))
+            # overall_min_ys.append(min_y)
+            # overall_max_ys.append(max_y)
+            scaler = MinMaxScaler(feature_range=(-1, 1))
             shape = y_preds.shape
             # y_preds_scaled = []
             y_preds_scaled = scaler.fit_transform(y_preds.flatten().reshape(-1,1))
             y_preds_scaled = y_preds_scaled.reshape(shape)
             plot_feature_maps(y_preds_scaled, y_preds, 4, 9, title="subj_{}_layer1".format(i), vmin=min_y, vmax=max_y)
-    
+    '''
     overall_min_y = min(overall_min_ys)
     overall_max_y = max(overall_max_ys)
     y_preds_subjects = np.concatenate(y_preds_subjects, axis=0)
@@ -377,7 +377,7 @@ def visualise_feature_maps():
     y_preds_subjects_scaled = scaler.fit_transform(y_preds_subjects.flatten().reshape(-1,1))
     y_preds_subjects_scaled = y_preds_subjects_scaled.reshape(shape)
     plot_feature_maps(y_preds_subjects_scaled, y_preds_subjects, 4, 9, title="subj_test_avg_layer2")
-
+    '''
 
 if __name__ == '__main__': # if this file is been run directly by Python
     # train()
