@@ -32,7 +32,7 @@ batch_size = 512
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 channel_indices = [3,8,9,10,11,12,14,15,16,17,18,19,20,22,23,24,25,26,30,31,32,38]
-n_epoch = 80
+n_epoch = 100
 early_stopping = 20
 
 '''
@@ -51,7 +51,7 @@ def layers(inputs, params=None):
         out = Lambda(lambda x: K.expand_dims(x, -1))(out)
         out = DepthwiseConv2D(kernel_size=(1,42), strides=(1,1), padding='valid', depth_multiplier=64)(out)
         branch_outputs.append(out)
-    unit = Convolution2D(1, (1,1), strides=(1,1), padding='valid')(branch_outputs[0])
+    # unit = Convolution2D(1, (1,1), strides=(1,1), padding='valid')(branch_outputs[0])
     pipe = Add()(branch_outputs)
     # pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe = BatchNormalization()(pipe)
