@@ -11,7 +11,7 @@ from keras.layers import Dense,BatchNormalization, Add, \
     Input, concatenate, LeakyReLU, AveragePooling1D, Embedding, Lambda
 from keras import optimizers, callbacks, backend as K
 
-from DepthwiseConv3D import DepthwiseConv3D
+from GroupDepthwiseConv3D import DepthwiseConv3D
 from methods import se_block, build_crops
 from DataGenerator import DataGenerator
 import read_bci_data_fb
@@ -33,6 +33,7 @@ Training model for classification of EEG samples into motor imagery classes
 '''
 
 def layers(inputs, params=None):
+    '''
     branch_outputs = []
     for i in range(n_channels):
         # Slicing the ith channel:
@@ -45,6 +46,12 @@ def layers(inputs, params=None):
         out = DepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), padding='valid', depth_multiplier=1, groups=64)(out)
         branch_outputs.append(out)
     pipe1 = Add()(branch_outputs)
+    '''
+    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), group_multiplier=64, padding='valid', group_size=9)(inputs)
+    pipe1 = LeakyReLU(alpha=0.05)(pipe1)
+    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), group_multiplier=1, padding='valid', group_size=9)(pipe1)
+    pipe1 = LeakyReLU(alpha=0.05)(pipe1)
+    pipe1 = DepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), group_multiplier=1, padding='valid', group_size=9)(pipe1)
     # pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=7, padding='valid', groups=9)(inputs)
     # pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     # pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=7, padding='valid', groups=64)(pipe1)
