@@ -29,7 +29,7 @@ from matplotlib import cm
 
 '''  Parameters '''
 # folder_path = 'model_results_fb_local - good results'
-folder_path = 'model_results_fb_local'
+folder_path = 'model_results_fb_local_2'
 batch_size = 64
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
@@ -55,6 +55,27 @@ def layers(inputs, params=None):
     pipe = Flatten()(pipe)
     return pipe
 
+def new_layers(inputs, params=None):
+    branch_outputs = []
+    for i in range(64):
+        out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=1, groups=1)(inputs)
+        out = LeakyReLU(alpha=0.05)(out)
+        out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=1, groups=1)(out)
+        out = LeakyReLU(alpha=0.05)(out)
+        out = DepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), padding='valid', depth_multiplier=1, groups=1)(out)
+        out = Reshape((out.shape[1].value, out.shape[-1].value))(out)
+        out = Add()([Lambda(lambda x: x[:,:,i])(out) for i in range(9)])
+        out = Lambda(lambda x: K.expand_dims(x, -1))(out)
+        branch_outputs.append(out)
+    pipe = concatenate(branch_outputs, axis=2)
+    pipe = BatchNormalization()(pipe)
+    pipe = LeakyReLU(alpha=0.05)(pipe)
+    pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
+    pipe = Dropout(0.5)(pipe)
+    pipe = Flatten()(pipe)
+    return pipe
+    
+
 def train_single_subj(X_list, y, train_indices, val_indices, subject):
 
     X_shape = X_list[0].shape # (273, 250, 6, 7, 9)
@@ -76,7 +97,7 @@ def train_single_subj(X_list, y, train_indices, val_indices, subject):
     activation = 'softmax'
  
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
-    pipeline = layers(inputs, params)
+    pipeline = new_layers(inputs, params)
     output = Dense(output_dim, activation=activation)(pipeline)
     model = Model(inputs=inputs, outputs=output)
 
@@ -115,7 +136,7 @@ def evaluate_single_subj(X_list, y_test, X_indices, subject):
     model_name = 'A0{:d}_model'.format(subject)
     output_dim = params['n_classes']
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
-    pipeline = layers(inputs, params)
+    pipeline = new_layers(inputs, params)
     output = Dense(output_dim, activation='softmax')(pipeline)
     model = Model(inputs=inputs, outputs=output)
     model.load_weights('./{}/{}.hdf5'.format(folder_path, model_name))
@@ -239,7 +260,7 @@ def train():
                     for i in range(len(subjects_train))]
 
     # Iterate training on each subject separately
-    for i in [1,2,3,4,5,6,7,8]:
+    for i in [0,1,2,3,4,5,6,7,8]:
         train_index = subj_train_order[i]
         np.random.seed(123)
         X, y, _ = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
@@ -269,7 +290,7 @@ def evaluate(visualise=False):
                     for i in range(len(subjects_test))]
     
     # Iterate test on each subject separately
-    for i in [1,2,3,4,5,6,7,8]:
+    for i in [0,1,2,3,4,5,6,7,8]:
         test_index = subj_test_order[i]
         X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
         ''' Test Model '''
@@ -380,7 +401,7 @@ def visualise_feature_maps():
     '''
 
 if __name__ == '__main__': # if this file is been run directly by Python
-    # train()
-    # evaluate()
+    train()
+    evaluate()
     # visualise()
-    visualise_feature_maps()
+    # visualise_feature_maps()

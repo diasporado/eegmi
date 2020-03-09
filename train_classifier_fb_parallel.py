@@ -79,8 +79,8 @@ def layers(inputs, params=None):
     #pipe = concatenate([pipe1, pipe2], axis=2)
     pipe = Add()([pipe1, pipe2])
     pipe = concatenate([pipe, pipe1, pipe2], axis=2)
-    pipe = Flatten()(pipe)
     pipe = Dropout(0.5)(pipe)
+    pipe = Flatten()(pipe)
     return pipe
 
 def local_model_layers(inputs, params=None):
