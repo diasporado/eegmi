@@ -184,7 +184,7 @@ class DepthwiseConv3D(Conv3D):
         depthwise_kernel_shape = (self.kernel_size[0],
                                   self.kernel_size[1],
                                   self.kernel_size[2],
-                                  self.input_dim, 1)
+                                  self.input_dim, self.depth_multiplier)
 
 
         self.depthwise_kernel = self.add_weight(
@@ -248,12 +248,12 @@ class DepthwiseConv3D(Conv3D):
             depth = input_shape[2]
             rows = input_shape[3]
             cols = input_shape[4]
-            out_filters = self.input_dim
+            out_filters = self.depth_multiplier
         elif self.data_format == 'channels_last':
             depth = input_shape[1]
             rows = input_shape[2]
             cols = input_shape[3]
-            out_filters = self.input_dim
+            out_filters = self.depth_multiplier
 
         depth = conv_utils.conv_output_length(depth, self.kernel_size[0],
                                              self.padding,
