@@ -34,21 +34,22 @@ Training model for classification of EEG samples into motor imagery classes
 '''
 
 def layers(inputs, params=None):
-    '''
+    
     branch_outputs = []
-    for i in range(n_channels):
+    for i in range(64):
         # Slicing the ith channel:
-        out = Lambda(lambda x: x[:,:,:,:,i])(inputs)
-        out = Lambda(lambda x: K.expand_dims(x, -1))(out)
-        out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=64, groups=1)(out)
+        # out = Lambda(lambda x: x[:,:,:,:,i])(inputs)
+        # out = Lambda(lambda x: K.expand_dims(x, -1))(out)
+        out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=1, groups=1)(inputs)
         out = LeakyReLU(alpha=0.05)(out)
-        out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=1, groups=64)(out)
+        out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=1, groups=1)(out)
         out = LeakyReLU(alpha=0.05)(out)
-        out = DepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), padding='valid', depth_multiplier=1, groups=64)(out)
+        out = DepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), padding='valid', depth_multiplier=1, groups=1)(out)
+        out = Reshape((out.shape[1].value, out.shape[-1].value))(out)
         branch_outputs.append(out)
-    pipe1 = Add()(branch_outputs)
-    '''
-    pipe1 = GroupDepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), group_multiplier=128, padding='valid', group_size=1)(inputs)
+    # pipe1 = Add()(branch_outputs)
+    ''' 
+    pipe1 = GroupDepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), group_multiplier=64, padding='valid', group_size=1)(inputs)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     pipe1 = GroupDepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), group_multiplier=1, padding='valid', group_size=1)(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
@@ -58,13 +59,16 @@ def layers(inputs, params=None):
     # pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=7, padding='valid', groups=64)(pipe1)
     # pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     # pipe1 = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe1)
-    pipe1 = Reshape((pipe1.shape[1].value, 128, 9))(pipe1)
+    
+    pipe1 = Reshape((pipe1.shape[1].value, 64, 9))(pipe1)
     pipe1 = Add()([Lambda(lambda x: x[:,:,:,i])(pipe1) for i in range(9)])
+    '''
+    pipe1 = concatenate(branch_outputs, axis=2)
     pipe1 = BatchNormalization()(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     pipe1 = AveragePooling1D(pool_size=(75), strides=(15))(pipe1)
 
-    pipe2 = Conv3D(128, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
+    pipe2 = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe2 = BatchNormalization()(pipe2)
     pipe2 = LeakyReLU(alpha=0.05)(pipe2)
     pipe2 = Reshape((pipe2.shape[1].value, pipe2.shape[-1].value))(pipe2)

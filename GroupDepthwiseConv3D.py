@@ -183,11 +183,18 @@ class GroupDepthwiseConv3D(Conv3D):
 
         self.group_num = self.input_dim // self.group_size
 
+        '''
         kernel_shape = (self.group_num,
                         self.kernel_size[0],
                         self.kernel_size[1],
                         self.kernel_size[2],
                         self.group_size,
+                        self.group_multiplier)
+        '''
+        kernel_shape = (self.kernel_size[0],
+                        self.kernel_size[1],
+                        self.kernel_size[2],
+                        self.input_dim,
                         self.group_multiplier)
 
         self.kernel = self.add_weight(
@@ -197,8 +204,6 @@ class GroupDepthwiseConv3D(Conv3D):
             regularizer=self.group_depthwise_regularizer,
             constraint=self.group_depthwise_constraint)
         
-        print(self.kernel.shape)
-
         if self.use_bias:
             self.bias = self.add_weight(shape=(self.group_num * self.group_multiplier,),
                                         initializer=self.bias_initializer,
@@ -220,16 +225,12 @@ class GroupDepthwiseConv3D(Conv3D):
             dilation = self.dilation_rate + (1,) + (1,)
 
         inputs = tf.split(inputs[0], self.group_num, axis=self.channel_axis)
-        print(len(inputs))
-        print(inputs[0].shape)
         outputs = tf.concat(
             [tf.nn.conv3d(inp, self.kernel[i, :, :, :, :, :],
                           strides=self._strides,
                           padding=self._padding,
                           dilations=dilation,
                           data_format=self._data_format) for i, inp in enumerate(inputs)], axis=self.channel_axis)
-
-        print(outputs.shape)
 
         if self.bias is not None:
             outputs = K.bias_add(
