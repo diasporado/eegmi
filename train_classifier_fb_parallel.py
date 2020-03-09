@@ -11,7 +11,8 @@ from keras.layers import Dense,BatchNormalization, Add, \
     Input, concatenate, LeakyReLU, AveragePooling1D, Embedding, Lambda
 from keras import optimizers, callbacks, backend as K
 
-from GroupDepthwiseConv3D import DepthwiseConv3D
+from GroupDepthwiseConv3D import GroupDepthwiseConv3D
+from DepthwiseConv3D import DepthwiseConv3D
 from methods import se_block, build_crops
 from DataGenerator import DataGenerator
 import read_bci_data_fb
@@ -47,11 +48,11 @@ def layers(inputs, params=None):
         branch_outputs.append(out)
     pipe1 = Add()(branch_outputs)
     '''
-    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), group_multiplier=64, padding='valid', group_size=9)(inputs)
+    pipe1 = GroupDepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), group_multiplier=64, padding='valid', group_size=1)(inputs)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), group_multiplier=1, padding='valid', group_size=9)(pipe1)
+    pipe1 = GroupDepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), group_multiplier=1, padding='valid', group_size=1)(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    pipe1 = DepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), group_multiplier=1, padding='valid', group_size=9)(pipe1)
+    pipe1 = GroupDepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), group_multiplier=1, padding='valid', group_size=1)(pipe1)
     # pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=7, padding='valid', groups=9)(inputs)
     # pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     # pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=7, padding='valid', groups=64)(pipe1)
@@ -59,7 +60,8 @@ def layers(inputs, params=None):
     # pipe1 = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe1)
     pipe1 = BatchNormalization()(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    pipe1 = Reshape((pipe1.shape[1].value, pipe1.shape[-1].value))(pipe1)
+    pipe1 = Reshape((pipe1.shape[1].value, 64, 9))(pipe1)
+    pipe1 = Add()([Lambda(lambda x: x[:,:,:,i])(pipe1) for i in range(9)])
     pipe1 = AveragePooling1D(pool_size=(75), strides=(15))(pipe1)
 
     pipe2 = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
