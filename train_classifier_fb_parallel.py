@@ -25,7 +25,7 @@ use_contrastive_center_loss = False
 n_channels = 9
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 15
+n_epoch = 50
 early_stopping = 10
 
 '''
@@ -42,13 +42,14 @@ def layers(inputs, params=None):
         out = LeakyReLU(alpha=0.05)(out)
         out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=1, groups=64)(out)
         out = LeakyReLU(alpha=0.05)(out)
+        out = DepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), padding='valid', depth_multiplier=1, groups=64)(out)
         branch_outputs.append(out)
     pipe1 = Add()(branch_outputs)
     # pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=7, padding='valid', groups=9)(inputs)
     # pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     # pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=7, padding='valid', groups=64)(pipe1)
     # pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    pipe1 = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe1)
+    # pipe1 = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe1)
     pipe1 = BatchNormalization()(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     pipe1 = Reshape((pipe1.shape[1].value, pipe1.shape[-1].value))(pipe1)
@@ -145,7 +146,7 @@ def train(X_list, y, train_indices, val_indices, subject):
           callbacks.ReduceLROnPlateau(monitor='val_loss',factor=0.5,patience=3,min_lr=0.00001),
           callbacks.ModelCheckpoint(model_path,monitor='loss',verbose=0,
                                     save_best_only=True, period=1),
-          callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss')]
+          callbacks.EarlyStopping(patience=early_stopping, monitor='val_accuracy')]
 
     model.fit_generator(
         generator=training_generator,
