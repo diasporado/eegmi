@@ -36,7 +36,7 @@ Training model for classification of EEG samples into motor imagery classes
 def layers(inputs, params=None):
     
     branch_outputs = []
-    for i in range(64):
+    for i in range(128):
         # Slicing the ith channel:
         # out = Lambda(lambda x: x[:,:,:,:,i])(inputs)
         # out = Lambda(lambda x: K.expand_dims(x, -1))(out)
@@ -46,6 +46,8 @@ def layers(inputs, params=None):
         out = LeakyReLU(alpha=0.05)(out)
         out = DepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), padding='valid', depth_multiplier=1, groups=1)(out)
         out = Reshape((out.shape[1].value, out.shape[-1].value))(out)
+        out = Add()([Lambda(lambda x: x[:,:,i])(out) for i in range(9)])
+        out = Lambda(lambda x: K.expand_dims(x, -1))(out)
         branch_outputs.append(out)
     # pipe1 = Add()(branch_outputs)
     ''' 
@@ -68,7 +70,7 @@ def layers(inputs, params=None):
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     pipe1 = AveragePooling1D(pool_size=(75), strides=(15))(pipe1)
 
-    pipe2 = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
+    pipe2 = Conv3D(128, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe2 = BatchNormalization()(pipe2)
     pipe2 = LeakyReLU(alpha=0.05)(pipe2)
     pipe2 = Reshape((pipe2.shape[1].value, pipe2.shape[-1].value))(pipe2)

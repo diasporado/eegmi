@@ -184,8 +184,7 @@ class DepthwiseConv3D(Conv3D):
         depthwise_kernel_shape = (self.kernel_size[0],
                                   self.kernel_size[1],
                                   self.kernel_size[2],
-                                  self.input_dim,
-                                  self.depth_multiplier)
+                                  self.input_dim, 1)
 
 
         self.depthwise_kernel = self.add_weight(
@@ -196,7 +195,7 @@ class DepthwiseConv3D(Conv3D):
             constraint=self.depthwise_constraint)
 
         if self.use_bias:
-            self.bias = self.add_weight(shape=(self.groups * self.depth_multiplier,),
+            self.bias = self.add_weight(shape=(self.input_dim,),
                                         initializer=self.bias_initializer,
                                         name='bias',
                                         regularizer=self.bias_regularizer,
@@ -226,12 +225,11 @@ class DepthwiseConv3D(Conv3D):
                     data_format=self._data_format) for i in range(0,self.input_dim,self.input_dim//self.groups)], axis=1)
 
         else:
-            outputs = tf.concat(
-                [tf.nn.conv3d(inputs[0][:,:,:,:,i:i+self.input_dim//self.groups], self.depthwise_kernel[:,:,:,i:i+self.input_dim//self.groups,:],
+            outputs = tf.nn.conv3d(inputs[0], self.depthwise_kernel,
                     strides=self._strides,
                     padding=self._padding,
                     dilations=dilation,
-                    data_format=self._data_format) for i in range(0,self.input_dim,self.input_dim//self.groups)], axis=-1)
+                    data_format=self._data_format)
 
 
         if self.bias is not None:
@@ -250,12 +248,12 @@ class DepthwiseConv3D(Conv3D):
             depth = input_shape[2]
             rows = input_shape[3]
             cols = input_shape[4]
-            out_filters = self.input_dim * self.depth_multiplier
+            out_filters = self.input_dim
         elif self.data_format == 'channels_last':
             depth = input_shape[1]
             rows = input_shape[2]
             cols = input_shape[3]
-            out_filters = self.input_dim * self.depth_multiplier
+            out_filters = self.input_dim
 
         depth = conv_utils.conv_output_length(depth, self.kernel_size[0],
                                              self.padding,
