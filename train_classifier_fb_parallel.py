@@ -26,7 +26,7 @@ use_contrastive_center_loss = False
 n_channels = 9
 batch_size = 64
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 50
+n_epoch = 25
 early_stopping = 10
 
 '''
@@ -36,7 +36,7 @@ Training model for classification of EEG samples into motor imagery classes
 def layers(inputs, params=None):
     
     branch_outputs = []
-    for i in range(128):
+    for i in range(64):
         # Slicing the ith channel:
         # out = Lambda(lambda x: x[:,:,:,:,i])(inputs)
         # out = Lambda(lambda x: K.expand_dims(x, -1))(out)
@@ -70,7 +70,7 @@ def layers(inputs, params=None):
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     pipe1 = AveragePooling1D(pool_size=(75), strides=(15))(pipe1)
 
-    pipe2 = Conv3D(128, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
+    pipe2 = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe2 = BatchNormalization()(pipe2)
     pipe2 = LeakyReLU(alpha=0.05)(pipe2)
     pipe2 = Reshape((pipe2.shape[1].value, pipe2.shape[-1].value))(pipe2)
@@ -161,7 +161,7 @@ def train(X_list, y, train_indices, val_indices, subject):
           callbacks.ReduceLROnPlateau(monitor='val_loss',factor=0.5,patience=3,min_lr=0.00001),
           callbacks.ModelCheckpoint(model_path,monitor='loss',verbose=0,
                                     save_best_only=True, period=1),
-          callbacks.EarlyStopping(patience=early_stopping, monitor='val_accuracy')]
+          callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss')]
 
     model.fit_generator(
         generator=training_generator,
@@ -243,7 +243,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
                     for i in range(len(subjects_test))]
 
     # Iterate training and test on each subject separately
-    for i in [1,3,4,5,0,2,6,7,8]:
+    for i in range(9):
         train_index = subj_train_order[i]
         test_index = subj_test_order[i]
         np.random.seed(123)
