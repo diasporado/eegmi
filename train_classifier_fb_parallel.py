@@ -54,7 +54,7 @@ def layers(inputs, params=None):
         #out = Add()([Lambda(lambda x: x[:,:,i])(out) for i in range(9)])
         # out = Lambda(lambda x: K.expand_dims(x, -1))(out)
         branch_outputs.append(out)
-    # pipe1 = Add()(branch_outputs)
+    pipe1 = Add()(branch_outputs)
     ''' 
     pipe1 = GroupDepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), group_multiplier=64, padding='valid', group_size=1)(inputs)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
@@ -70,10 +70,10 @@ def layers(inputs, params=None):
     pipe1 = Reshape((pipe1.shape[1].value, 64, 9))(pipe1)
     pipe1 = Add()([Lambda(lambda x: x[:,:,:,i])(pipe1) for i in range(9)])
     '''
-    pipe1 = concatenate(branch_outputs, axis=2)
+    # pipe1 = concatenate(branch_outputs, axis=2)
     pipe1 = AveragePooling1D(pool_size=(75), strides=(15))(pipe1)
 
-    pipe2 = Conv3D(576, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
+    pipe2 = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe2 = BatchNormalization()(pipe2)
     pipe2 = LeakyReLU(alpha=0.05)(pipe2)
     pipe2 = Reshape((pipe2.shape[1].value, pipe2.shape[-1].value))(pipe2)
@@ -81,7 +81,7 @@ def layers(inputs, params=None):
 
     #pipe = concatenate([pipe1, pipe2], axis=2)
     pipe = Add()([pipe1, pipe2])
-    pipe = concatenate([pipe, pipe1, pipe2], axis=2)
+    pipe = concatenate([pipe, pipe1, pipe2, pipe2, pipe2, pipe2], axis=2)
     pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
     return pipe
