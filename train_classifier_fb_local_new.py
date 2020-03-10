@@ -57,19 +57,20 @@ def layers(inputs, params=None):
 
 def new_layers(inputs, params=None):
     branch_outputs = []
-    for i in range(64):
-        out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=1, groups=1)(inputs)
-        out = LeakyReLU(alpha=0.05)(out)
-        out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=1, groups=1)(out)
-        out = LeakyReLU(alpha=0.05)(out)
-        out = DepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), padding='valid', depth_multiplier=1, groups=1)(out)
-        out = Reshape((out.shape[1].value, out.shape[-1].value))(out)
-        out = Add()([Lambda(lambda x: x[:,:,i])(out) for i in range(9)])
+    for i in range(9):
+        # Slicing the ith channel:
+        out = Lambda(lambda x: x[:,:,:,:,i])(inputs)
         out = Lambda(lambda x: K.expand_dims(x, -1))(out)
+        out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
+        out = LeakyReLU(alpha=0.05)(out)
+        out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
+        out = LeakyReLU(alpha=0.05)(out)
+        out = Conv3D(64, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
+        out = BatchNormalization()(out)
+        out = LeakyReLU(alpha=0.05)(out)
+        out = Reshape((out.shape[1].value, out.shape[-1].value))(out)
         branch_outputs.append(out)
-    pipe = concatenate(branch_outputs, axis=2)
-    pipe = BatchNormalization()(pipe)
-    pipe = LeakyReLU(alpha=0.05)(pipe)
+    pipe = Add()(branch_outputs)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
     pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
