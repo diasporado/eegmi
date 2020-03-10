@@ -81,7 +81,7 @@ def layers(inputs, params=None):
 
     #pipe = concatenate([pipe1, pipe2], axis=2)
     pipe = Add()([pipe1, pipe2])
-    pipe = concatenate([pipe, pipe1, pipe2, pipe2, pipe2, pipe2], axis=2)
+    pipe = concatenate([pipe, pipe1, pipe2], axis=2)
     pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
     return pipe
@@ -263,7 +263,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
 
         tf.compat.v1.reset_default_graph()
         with tf.compat.v1.Session() as sess:
-            train(X_list, y, train_indices, val_indices, i+1)
+            # train(X_list, y, train_indices, val_indices, i+1)
             del(X)
             del(y)
             del(X_list)
