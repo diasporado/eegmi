@@ -26,7 +26,7 @@ use_contrastive_center_loss = False
 n_channels = 9
 batch_size = 256
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 25
+n_epoch = 50
 early_stopping = 10
 
 '''
@@ -155,7 +155,7 @@ def train(X_list, y, train_indices, val_indices, subject):
             model.layers[ind].set_weights(pretrained_model_global.layers[2].get_weights())
     '''
 
-    opt = optimizers.adam(lr=0.005, beta_2=0.999)
+    opt = optimizers.adam(lr=0.01, beta_2=0.999)
     model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
     
     model.summary()
