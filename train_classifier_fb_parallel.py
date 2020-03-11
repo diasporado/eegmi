@@ -24,7 +24,7 @@ pretrained_folder_path_2 = 'model_results_fb_local - good results'
 use_center_loss = False
 use_contrastive_center_loss = False
 n_channels = 9
-batch_size = 512
+batch_size = 256
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 25
 early_stopping = 10
@@ -40,13 +40,13 @@ def layers(inputs, params=None):
         # Slicing the ith channel:
         out = Lambda(lambda x: x[:,:,:,:,i])(inputs)
         out = Lambda(lambda x: K.expand_dims(x, -1))(out)
-        out = Conv3D(32, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
+        out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
         # out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=64, groups=1)(inputs)
         out = LeakyReLU(alpha=0.05)(out)
-        out = Conv3D(32, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
+        out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
         # out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=1, groups=1)(out)
         out = LeakyReLU(alpha=0.05)(out)
-        out = Conv3D(32, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
+        out = Conv3D(64, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
         out = BatchNormalization()(out)
         out = LeakyReLU(alpha=0.05)(out)
         # out = DepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), padding='valid', depth_multiplier=1, groups=1)(out)
@@ -73,15 +73,15 @@ def layers(inputs, params=None):
     # pipe1 = concatenate(branch_outputs, axis=2)
     pipe1 = AveragePooling1D(pool_size=(75), strides=(15))(pipe1)
 
-    pipe2 = Conv3D(32, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
+    pipe2 = Conv3D(256, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe2 = BatchNormalization()(pipe2)
     pipe2 = LeakyReLU(alpha=0.05)(pipe2)
     pipe2 = Reshape((pipe2.shape[1].value, pipe2.shape[-1].value))(pipe2)
     pipe2 = AveragePooling1D(pool_size=(75), strides=(15))(pipe2)
 
     #pipe = concatenate([pipe1, pipe2], axis=2)
-    pipe = Add()([pipe1, pipe2])
-    pipe = concatenate([pipe, pipe1, pipe2], axis=2)
+    # pipe = Add()([pipe1, pipe2])
+    pipe = concatenate([pipe1, pipe2], axis=2)
     pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
     return pipe
@@ -246,7 +246,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
                     for i in range(len(subjects_test))]
 
     # Iterate training and test on each subject separately
-    for i in range(1,9):
+    for i in range(9):
         train_index = subj_train_order[i]
         test_index = subj_test_order[i]
         np.random.seed(123)
@@ -263,7 +263,7 @@ if __name__ == '__main__': # if this file is been run directly by Python
 
         tf.compat.v1.reset_default_graph()
         with tf.compat.v1.Session() as sess:
-            # train(X_list, y, train_indices, val_indices, i+1)
+            train(X_list, y, train_indices, val_indices, i+1)
             del(X)
             del(y)
             del(X_list)
