@@ -30,7 +30,7 @@ from matplotlib import cm
 '''  Parameters '''
 # folder_path = 'model_results_fb_local - good results'
 folder_path = 'model_results_fb_local_2'
-batch_size = 256
+batch_size = 64
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 25
@@ -102,7 +102,7 @@ def train_single_subj(X_list, y, train_indices, val_indices, subject):
     output = Dense(output_dim, activation=activation)(pipeline)
     model = Model(inputs=inputs, outputs=output)
 
-    opt = optimizers.adam(lr=0.001, beta_2=0.999)
+    opt = optimizers.adam(lr=0.005, beta_2=0.999)
     model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
     cb = [callbacks.ProgbarLogger(count_mode='steps'),
           callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=3,min_lr=0.00001),
