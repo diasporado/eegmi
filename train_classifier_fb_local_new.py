@@ -33,7 +33,7 @@ folder_path = 'model_results_fb_local_2'
 batch_size = 64
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 20
+n_epoch = 40
 early_stopping = 10
 
 '''
@@ -62,15 +62,16 @@ def new_layers(inputs, params=None):
         out = Lambda(lambda x: x[:,:,:,:,i])(inputs)
         out = Lambda(lambda x: K.expand_dims(x, -1))(out)
         out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
-        out = LeakyReLU(alpha=0.05)(out)
+        # out = LeakyReLU(alpha=0.05)(out)
         out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
-        out = LeakyReLU(alpha=0.05)(out)
+        # out = LeakyReLU(alpha=0.05)(out)
         out = Conv3D(64, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
         out = BatchNormalization()(out)
         out = LeakyReLU(alpha=0.05)(out)
         out = Reshape((out.shape[1].value, out.shape[-1].value))(out)
         branch_outputs.append(out)
     pipe = Add()(branch_outputs)
+    pipe = concatenate(branch_outputs + [pipe], axis=2)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
     pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
