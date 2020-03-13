@@ -33,7 +33,7 @@ folder_path = 'model_results_fb_local_2'
 batch_size = 512
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 40
+n_epoch = 80
 early_stopping = 10
 
 '''
@@ -103,10 +103,10 @@ def train_single_subj(X_list, y, train_indices, val_indices, subject):
     output = Dense(output_dim, activation=activation)(pipeline)
     model = Model(inputs=inputs, outputs=output)
 
-    opt = optimizers.adam(lr=0.005, beta_2=0.999)
+    opt = optimizers.adam(lr=0.01, beta_2=0.999)
     model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
     cb = [callbacks.ProgbarLogger(count_mode='steps'),
-          callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=3,min_lr=0.00001),
+          callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=2,min_lr=0.00001),
           callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='loss',verbose=0,
                                     save_best_only=True, period=1),
           callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss')]
@@ -403,7 +403,7 @@ def visualise_feature_maps():
     '''
 
 if __name__ == '__main__': # if this file is been run directly by Python
-    # train()
+    train()
     evaluate()
     # visualise()
     # visualise_feature_maps()
