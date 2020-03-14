@@ -7,7 +7,7 @@ import tensorflow as tf
 
 from keras.models import Model, Sequential, load_model
 from keras.layers import Dense,BatchNormalization, DepthwiseConv2D, Convolution2D, \
-    Activation,Flatten,Dropout,Reshape,Conv3D,TimeDistributed, \
+    Activation,Flatten,Dropout,Reshape,Conv3D,TimeDistributed, AveragePooling3D, \
     Input, concatenate, LeakyReLU, AveragePooling1D, Lambda, Add
 from keras import optimizers, callbacks, backend as K
 
@@ -30,10 +30,10 @@ from matplotlib import cm
 '''  Parameters '''
 # folder_path = 'model_results_fb_local - good results'
 folder_path = 'model_results_fb_local_2'
-batch_size = 256
+batch_size = 512
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 25
+n_epoch = 50
 early_stopping = 10
 
 '''
@@ -64,9 +64,10 @@ def new_layers(inputs, params=None):
         # out = Conv3D(40, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
         # out = Conv3D(40, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
         # out = Conv3D(40, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
-        out = Conv3D(48, kernel_size=(75,3,3), strides=(15,1,1), padding='valid')(out)
+        out = Conv3D(48, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
         # out = BatchNormalization()(out)
         out = LeakyReLU(alpha=0.05)(out)
+        out = AveragePooling3D(pool_size=(75,1,1), strides=(15,1,1))(out)
         out = Conv3D(48, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
         # out = BatchNormalization()(out)
         out = LeakyReLU(alpha=0.05)(out)
@@ -112,7 +113,7 @@ def train_single_subj(X_list, y, train_indices, val_indices, subject):
     opt = optimizers.adam(lr=0.005, beta_2=0.999)
     model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
     cb = [callbacks.ProgbarLogger(count_mode='steps'),
-          callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=2,min_lr=0.00001),
+          callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=3,min_lr=0.00001),
           callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='loss',verbose=0,
                                     save_best_only=True, period=1),
           callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss')]
