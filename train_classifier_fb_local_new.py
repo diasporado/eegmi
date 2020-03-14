@@ -33,7 +33,7 @@ folder_path = 'model_results_fb_local_2'
 batch_size = 512
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 75
+n_epoch = 40
 early_stopping = 10
 
 '''
@@ -64,17 +64,16 @@ def new_layers(inputs, params=None):
         # out = Conv3D(40, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
         # out = Conv3D(40, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
         # out = Conv3D(40, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
-        out = Conv3D(48, kernel_size=(75,3,3), strides=(15,1,1), padding='valid')(out)
-        # out = Conv3D(48, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
-        # out = BatchNormalization()(out)
+        # out = Conv3D(48, kernel_size=(75,3,3), strides=(15,1,1), padding='valid')(out)
+        out = Conv3D(48, kernel_size=(25,3,3), strides=(5,1,1), padding='valid')(out)
+        out = BatchNormalization()(out)
         out = LeakyReLU(alpha=0.05)(out)
         # out = AveragePooling3D(pool_size=(75,1,1), strides=(15,1,1))(out)
-        out = Conv3D(48, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
+        out = Conv3D(48, kernel_size=(3,3,3), strides=(3,1,1), padding='valid')(out)
         # out = BatchNormalization()(out)
         out = LeakyReLU(alpha=0.05)(out)
         out = Conv3D(48, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
         out = BatchNormalization()(out)
-        # out = LeakyReLU(alpha=0.05)(out)
         out = LeakyReLU(alpha=0.05)(out)
         out = Reshape((out.shape[1].value, out.shape[-1].value))(out)
         branch_outputs.append(out)
@@ -278,7 +277,7 @@ def train():
                     for i in range(len(subjects_train))]
 
     # Iterate training on each subject separately
-    for i in range(9):
+    for i in range(1):
         train_index = subj_train_order[i]
         np.random.seed(123)
         X, y, _ = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
@@ -308,7 +307,7 @@ def evaluate(visualise=False):
                     for i in range(len(subjects_test))]
     
     # Iterate test on each subject separately
-    for i in range(2):
+    for i in range(1):
         test_index = subj_test_order[i]
         X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
         ''' Test Model '''
@@ -419,7 +418,7 @@ def visualise_feature_maps():
     '''
 
 if __name__ == '__main__': # if this file is been run directly by Python
-    # train()
+    train()
     evaluate()
     # visualise()
     # visualise_feature_maps()
