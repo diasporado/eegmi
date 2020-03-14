@@ -7,7 +7,7 @@ import tensorflow as tf
 
 from keras.models import Model, Sequential, load_model
 from keras.layers import Dense,BatchNormalization, DepthwiseConv2D, Convolution2D, \
-    Activation,Flatten,Dropout,Reshape,Conv3D,TimeDistributed, \
+    Activation,Flatten,Dropout,Reshape,Conv3D,TimeDistributed, Elu,
     Input, concatenate, LeakyReLU, AveragePooling1D, Lambda, Add
 from keras import optimizers, callbacks, backend as K
 
@@ -33,7 +33,7 @@ folder_path = 'model_results_fb_local_2'
 batch_size = 512
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 80
+n_epoch = 40
 early_stopping = 10
 
 '''
@@ -61,13 +61,11 @@ def new_layers(inputs, params=None):
         # Slicing the ith channel:
         out = Lambda(lambda x: x[:,:,:,:,i])(inputs)
         out = Lambda(lambda x: K.expand_dims(x, -1))(out)
-        out = Conv3D(40, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
-        # out = LeakyReLU(alpha=0.05)(out)
-        out = Conv3D(40, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
-        # out = LeakyReLU(alpha=0.05)(out)
-        out = Conv3D(40, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
+        out = Conv3D(48, kernel_size=(1,3,3), strides=(1,1,1), padding='valid', activation='elu')(out)
+        out = Conv3D(48, kernel_size=(1,3,3), strides=(1,1,1), padding='valid', activation='elu')(out)
+        out = Conv3D(48, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
         out = BatchNormalization()(out)
-        out = LeakyReLU(alpha=0.05)(out)
+        out = Elu()(out)
         out = Reshape((out.shape[1].value, out.shape[-1].value))(out)
         branch_outputs.append(out)
     pipe = Add()(branch_outputs)
@@ -103,7 +101,7 @@ def train_single_subj(X_list, y, train_indices, val_indices, subject):
     output = Dense(output_dim, activation=activation)(pipeline)
     model = Model(inputs=inputs, outputs=output)
 
-    opt = optimizers.adam(lr=0.01, beta_2=0.999)
+    opt = optimizers.adam(lr=0.005, beta_2=0.999)
     model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
     cb = [callbacks.ProgbarLogger(count_mode='steps'),
           callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=2,min_lr=0.00001),
@@ -403,7 +401,7 @@ def visualise_feature_maps():
     '''
 
 if __name__ == '__main__': # if this file is been run directly by Python
-    # train()
+    train()
     evaluate()
     # visualise()
     # visualise_feature_maps()
