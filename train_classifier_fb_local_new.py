@@ -57,14 +57,18 @@ def layers(inputs, params=None):
 
 def new_layers(inputs, params=None):
     branch_outputs = []
-    for i in range(9):
+    for i in range(params['n_channels']):
         # Slicing the ith channel:
         out = Lambda(lambda x: x[:,:,:,:,i])(inputs)
         out = Lambda(lambda x: K.expand_dims(x, -1))(out)
+        # out = Conv3D(40, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
+        # out = Conv3D(40, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
+        # out = Conv3D(40, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
         out = Conv3D(48, kernel_size=(1,3,3), strides=(1,1,1), padding='valid', activation='elu')(out)
         out = Conv3D(48, kernel_size=(1,3,3), strides=(1,1,1), padding='valid', activation='elu')(out)
         out = Conv3D(48, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
         out = BatchNormalization()(out)
+        # out = LeakyReLU(alpha=0.05)(out)
         out = Activation('elu')(out)
         out = Reshape((out.shape[1].value, out.shape[-1].value))(out)
         branch_outputs.append(out)
@@ -188,21 +192,23 @@ def evaluate_layer(X_list, X_indices, subject):
     model_name = 'A0{:d}_model'.format(subject)
     output_dim = params['n_classes']
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
-    pipeline = layers(inputs, params)
+    pipeline = new_layers(inputs, params)
     output = Dense(output_dim)(pipeline)
     model = Model(inputs=inputs, outputs=output)
+    new_model = load_model('./{}/{}.hdf5'.format(folder_path, model_name), custom_objects={"tf": tf})
+    new_model.summary()
     model.load_weights('./{}/{}.hdf5'.format(folder_path, model_name))
-    model = Model(inputs=model.inputs, outputs=model.layers[1].output)
+    model = Model(inputs=model.inputs, outputs=model.layers[19].output)
     model.summary()
     
     X_test = np.array(X_list)
     X_test = X_test.reshape(X_test.shape[0] * X_test.shape[1], X_test.shape[2], X_test.shape[3], X_test.shape[4], X_test.shape[5])
     y_pred = model.predict(X_test)
 
-    y_pred = y_pred.reshape(y_pred.shape[0] * y_pred.shape[1], y_pred.shape[2], y_pred.shape[3], params['n_channels'], int(y_pred.shape[4] / params['n_channels']))
+    y_pred = y_pred.reshape(y_pred.shape[0] * y_pred.shape[1], y_pred.shape[2], y_pred.shape[3], y_pred.shape[4])
     min_y = min(y_pred.flatten())
     max_y = max(y_pred.flatten())
-    y_pred = np.mean(y_pred, axis=4)
+    y_pred = np.mean(y_pred, axis=-1)
     y_pred = np.mean(y_pred, axis=0)
     return y_pred, min_y, max_y
 
@@ -377,7 +383,7 @@ def visualise_feature_maps():
                 min_ys.append(min_y)
                 max_ys.append(max_y)
             y_preds = np.concatenate(y_preds, axis=-1)
-            y_preds_subjects.append(np.expand_dims(y_preds, axis=0))
+            # y_preds_subjects.append(np.expand_dims(y_preds, axis=0))
             min_y = min(min_ys)
             max_y = max(max_ys)
             # overall_min_ys.append(min_y)
@@ -401,7 +407,7 @@ def visualise_feature_maps():
     '''
 
 if __name__ == '__main__': # if this file is been run directly by Python
-    train()
+    # train()
     evaluate()
     # visualise()
     # visualise_feature_maps()
