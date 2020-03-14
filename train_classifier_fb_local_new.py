@@ -7,7 +7,7 @@ import tensorflow as tf
 
 from keras.models import Model, Sequential, load_model
 from keras.layers import Dense,BatchNormalization, DepthwiseConv2D, Convolution2D, \
-    Activation,Flatten,Dropout,Reshape,Conv3D,TimeDistributed, Elu, \
+    Activation,Flatten,Dropout,Reshape,Conv3D,TimeDistributed, \
     Input, concatenate, LeakyReLU, AveragePooling1D, Lambda, Add
 from keras import optimizers, callbacks, backend as K
 
@@ -65,7 +65,7 @@ def new_layers(inputs, params=None):
         out = Conv3D(48, kernel_size=(1,3,3), strides=(1,1,1), padding='valid', activation='elu')(out)
         out = Conv3D(48, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
         out = BatchNormalization()(out)
-        out = Elu()(out)
+        out = Activation('elu')(out)
         out = Reshape((out.shape[1].value, out.shape[-1].value))(out)
         branch_outputs.append(out)
     pipe = Add()(branch_outputs)
