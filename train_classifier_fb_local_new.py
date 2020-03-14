@@ -69,7 +69,7 @@ def new_layers(inputs, params=None):
         out = BatchNormalization()(out)
         out = LeakyReLU(alpha=0.05)(out)
         # out = AveragePooling3D(pool_size=(75,1,1), strides=(15,1,1))(out)
-        out = Conv3D(64, kernel_size=(15,3,3), strides=(3,1,1), padding='valid')(out)
+        out = Conv3D(64, kernel_size=(3,3,3), strides=(3,1,1), padding='valid')(out)
         # out = BatchNormalization()(out)
         out = LeakyReLU(alpha=0.05)(out)
         out = Conv3D(64, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
