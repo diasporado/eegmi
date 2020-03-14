@@ -7,7 +7,7 @@ import tensorflow as tf
 
 from keras.models import Model, Sequential, load_model
 from keras.layers import Dense,BatchNormalization, DepthwiseConv2D, Convolution2D, \
-    Activation,Flatten,Dropout,Reshape,Conv3D,TimeDistributed, Elu,
+    Activation,Flatten,Dropout,Reshape,Conv3D,TimeDistributed, Elu, \
     Input, concatenate, LeakyReLU, AveragePooling1D, Lambda, Add
 from keras import optimizers, callbacks, backend as K
 
