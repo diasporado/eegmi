@@ -199,21 +199,27 @@ def evaluate_layer(X_list, X_indices, subject):
     pipeline = new_layers(inputs, params)
     output = Dense(output_dim)(pipeline)
     model = Model(inputs=inputs, outputs=output)
-    new_model = load_model('./{}/{}.hdf5'.format(folder_path, model_name), custom_objects={"tf": tf})
-    new_model.summary()
     model.load_weights('./{}/{}.hdf5'.format(folder_path, model_name))
-    model = Model(inputs=model.inputs, outputs=model.layers[19].output)
-    model.summary()
+    models = []
+    for layer in range(9):
+        model_layer = Model(inputs=model.inputs, outputs=model.layers[28+layer].output)
+        # model_layer = Model(inputs=model.inputs, outputs=model.layers[19+layer].output)
+        if layer == 0:
+            model_layer.summary()
+        models.append(model_layer)
     
     X_test = np.array(X_list)
     X_test = X_test.reshape(X_test.shape[0] * X_test.shape[1], X_test.shape[2], X_test.shape[3], X_test.shape[4], X_test.shape[5])
-    y_pred = model.predict(X_test)
-
-    y_pred = y_pred.reshape(y_pred.shape[0] * y_pred.shape[1], y_pred.shape[2], y_pred.shape[3], y_pred.shape[4])
+    y_preds = [m.predict(X_test) for m in models]
+    y_preds = [y_pred[:,::5,:,:,:] for y_pred in y_preds]
+    y_preds = [y_pred.reshape(y_pred.shape[0] * y_pred.shape[1], y_pred.shape[2], y_pred.shape[3], y_pred.shape[4]) for y_pred in y_preds]
+    y_preds = [np.mean(y_pred, axis=-1) for y_pred in y_preds]
+    y_preds = [np.mean(y_pred, axis=0) for y_pred in y_preds]
+    y_pred = np.array(y_preds).transpose(1,2,0)
     min_y = min(y_pred.flatten())
     max_y = max(y_pred.flatten())
-    y_pred = np.mean(y_pred, axis=-1)
-    y_pred = np.mean(y_pred, axis=0)
+
+    print(y_pred.shape)
     return y_pred, min_y, max_y
 
 
@@ -356,15 +362,15 @@ def visualise():
 
 def visualise_feature_maps():
     # load bci competition test data set
-    raw_edf_test, subjects_test = read_bci_data_fb.load_raw(training=False)
+    raw_edf_test, subjects_test = read_bci_data_fb.load_raw(training=True)
     subj_test_order = [ np.argwhere(np.array(subjects_test)==i+1)[0][0]
                     for i in range(len(subjects_test))]
 
     overall_min_ys = []
     overall_max_ys = []
-    for i in [6]:
+    for i in [0]:
         test_index = subj_test_order[i]
-        X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
+        X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=True, drop_rejects=True, subj=test_index)
         # Split by class
         class_data = [[X_test[y_ind] for y_ind, y in enumerate(y_test) if y == ind] for ind in range(4)]
         np.random.seed(123)
@@ -375,7 +381,7 @@ def visualise_feature_maps():
             y_preds = []
             for class_ind, X_list in enumerate(class_data):
                 X_list = np.array(X_list)
-                X_list = build_crops(X_list, increment=500)
+                X_list = build_crops(X_list, increment=200)
                 X_indices = []
                 crops = len(X_list)
                 trials = len(X_list[0])
@@ -397,7 +403,7 @@ def visualise_feature_maps():
             # y_preds_scaled = []
             y_preds_scaled = scaler.fit_transform(y_preds.flatten().reshape(-1,1))
             y_preds_scaled = y_preds_scaled.reshape(shape)
-            plot_feature_maps(y_preds_scaled, y_preds, 4, 9, title="subj_{}_layer1".format(i), vmin=min_y, vmax=max_y)
+            plot_feature_maps(y_preds_scaled, y_preds, 4, 9, title="subj_{}_layer2".format(i), vmin=min_y, vmax=max_y)
     '''
     overall_min_y = min(overall_min_ys)
     overall_max_y = max(overall_max_ys)
@@ -411,7 +417,7 @@ def visualise_feature_maps():
     '''
 
 if __name__ == '__main__': # if this file is been run directly by Python
-    train()
+    # train()
     evaluate()
     # visualise()
     # visualise_feature_maps()
