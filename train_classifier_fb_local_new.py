@@ -77,7 +77,7 @@ def new_layers(inputs, params=None):
         out = Reshape((out.shape[1].value, out.shape[-1].value))(out)
         branch_outputs.append(out)
     pipe = Add()(branch_outputs)
-    # pipe = concatenate(branch_outputs + [pipe], axis=2)
+    pipe = concatenate(branch_outputs + [pipe], axis=2)
     # pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
     pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
