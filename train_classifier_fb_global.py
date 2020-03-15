@@ -55,12 +55,12 @@ def layers(inputs, params=None):
     # unit = Convolution2D(1, (1,1), strides=(1,1), padding='valid')(branch_outputs[0])
     pipe = Add()(branch_outputs)
     """
-    pipe = Conv3D(64, (75,6,7), strides=(15,1,1), padding='valid')(inputs)
+    pipe = Conv3D(64, (25,6,7), strides=(5,1,1), padding='valid')(inputs)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     # pipe = Dropout(0.5)(pipe)
     pipe = Reshape((pipe.shape[1].value, 64))(pipe)
-    # pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
+    pipe = AveragePooling1D(pool_size=(3), strides=(3))(pipe)
     pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
     return pipe
