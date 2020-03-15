@@ -73,7 +73,7 @@ def new_layers(inputs, params=None):
         # out = LeakyReLU(alpha=0.05)(out)
         out = Conv3D(40, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
         # out = BatchNormalization()(out)
-        out = LeakyReLU(alpha=0.05)(out)
+        # out = LeakyReLU(alpha=0.05)(out)
         out = Reshape((out.shape[1].value, out.shape[-1].value))(out)
         branch_outputs.append(out)
     pipe = Add()(branch_outputs)
