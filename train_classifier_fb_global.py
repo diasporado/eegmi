@@ -43,17 +43,19 @@ get_custom_objects().update({'square': Square(square)})
 get_custom_objects().update({'log': Log(safe_log)})
     
 def layers(inputs, params=None):
+    """
     branch_outputs = []
     pipe = Reshape((inputs.shape[1].value, inputs.shape[2].value * inputs.shape[3].value, inputs.shape[4].value))(inputs)
     for i in range(n_channels):
         # Slicing the ith channel:
         out = Lambda(lambda x: x[:,:,:,i])(pipe)
         out = Lambda(lambda x: K.expand_dims(x, -1))(out)
-        out = DepthwiseConv2D(kernel_size=(75,42), strides=(15,1), padding='valid', depth_multiplier=64)(out)
+        out = DepthwiseConv2D(kernel_size=(1,42), strides=(1,1), padding='valid', depth_multiplier=64)(out)
         branch_outputs.append(out)
     # unit = Convolution2D(1, (1,1), strides=(1,1), padding='valid')(branch_outputs[0])
     pipe = Add()(branch_outputs)
-    # pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
+    """
+    pipe = Conv3D(64, (75,6,7), strides=(15,1,1), padding='valid')(inputs)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     # pipe = Dropout(0.5)(pipe)
