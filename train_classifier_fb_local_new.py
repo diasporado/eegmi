@@ -33,7 +33,7 @@ folder_path = 'model_results_fb_local_2'
 batch_size = 256
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 40
+n_epoch = 25
 early_stopping = 20
 
 '''
@@ -111,7 +111,7 @@ def train_single_subj(X_list, y, train_indices, val_indices, subject):
     output = Dense(output_dim, activation=activation)(pipeline)
     model = Model(inputs=inputs, outputs=output)
 
-    opt = optimizers.adam(lr=0.001, beta_2=0.999)
+    opt = optimizers.adam(lr=0.005, beta_2=0.999)
     model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
     cb = [callbacks.ProgbarLogger(count_mode='steps'),
           callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=2,min_lr=0.00001),
@@ -278,7 +278,7 @@ def train():
                     for i in range(len(subjects_train))]
 
     # Iterate training on each subject separately
-    for i in range(5):
+    for i in range(1,2):
         train_index = subj_train_order[i]
         np.random.seed(123)
         X, y, _ = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
@@ -308,7 +308,7 @@ def evaluate(visualise=False):
                     for i in range(len(subjects_test))]
     
     # Iterate test on each subject separately
-    for i in range(5):
+    for i in range(1,2):
         test_index = subj_test_order[i]
         X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
         ''' Test Model '''
@@ -419,7 +419,7 @@ def visualise_feature_maps():
     '''
 
 if __name__ == '__main__': # if this file is been run directly by Python
-    # train()
+    train()
     evaluate()
     # visualise()
     # visualise_feature_maps()
