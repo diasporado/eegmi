@@ -33,7 +33,7 @@ folder_path = 'model_results_fb_local_2'
 batch_size = 256
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 40
+n_epoch = 15
 early_stopping = 20
 
 '''
@@ -419,7 +419,7 @@ def visualise_feature_maps():
     '''
 
 if __name__ == '__main__': # if this file is been run directly by Python
-    train()
+    # train()
     evaluate()
     # visualise()
     # visualise_feature_maps()
