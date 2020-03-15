@@ -83,7 +83,7 @@ vis_positions = np.array(vis_positions)
 
 def plot_mne_vis(amp_pred_corrs, title=None):
     fig, axes = plt.subplots(4, 9)
-    fig.set_size_inches(24,10)
+    fig.set_size_inches(12,5)
     for i in range(len(amp_pred_corrs)):
         freq_corr = np.mean(amp_pred_corrs[i,:,:], axis=1)
         max_abs_val = np.max(np.abs(freq_corr))
@@ -97,7 +97,7 @@ def plot_mne_vis(amp_pred_corrs, title=None):
             if i == 0:
                 ax.set_ylabel(all_classes[i_class], rotation=90, size='large')
     fig.tight_layout()
-    fig.savefig('./output_{}.png'.format(title))    
+    fig.savefig('./mne_plots/output_{}.png'.format(title))    
 
 def plot_feature_maps(y_pred, y_pred_original, row, col, title=None, vmin=0, vmax=1):
     # my_cmap = cmap(np.arange(cmap.N))
