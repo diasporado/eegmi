@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 
 '''  Parameters '''
-folder_path = 'model_results_fb_global_2'
+folder_path = 'model_results_fb_global - good results'
 batch_size = 512
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
@@ -58,10 +58,10 @@ def layers(inputs, params=None):
     pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
-    # pipe = Dropout(0.5)(pipe)
+    pipe = Dropout(0.5)(pipe)
     pipe = Reshape((pipe.shape[1].value, 64))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
-    pipe = Dropout(0.5)(pipe)
+    # pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
     return pipe
 
@@ -324,7 +324,7 @@ def visualise():
     amp_pred_corrs_list = np.concatenate(np.array(amp_pred_corrs_list), axis=2)
     np.save('./np/Average.npy', amp_pred_corrs_list)
     print(amp_pred_corrs_list.shape)
-    plot_mne_vis(amp_pred_corrs_list, title="Average Across 9 Subjects")
+    plot_mne_vis(amp_pred_corrs_list, title="Average")
 
 
 def visualise_feature_maps():
@@ -356,7 +356,7 @@ def visualise_feature_maps():
 
 if __name__ == '__main__': # if this file is been run directly by Python
     
-    train()
-    evaluate()
-    # visualise()
+    # train()
+    # evaluate()
+    visualise()
     # visualise_feature_maps()
