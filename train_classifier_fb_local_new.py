@@ -30,11 +30,11 @@ from matplotlib import cm
 '''  Parameters '''
 # folder_path = 'model_results_fb_local - good results'
 folder_path = 'model_results_fb_local_2'
-batch_size = 256
+batch_size = 512
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 15
-early_stopping = 20
+n_epoch = 40
+early_stopping = 10
 
 '''
 Training model for classification of EEG samples into motor imagery classes
@@ -65,13 +65,13 @@ def new_layers(inputs, params=None):
         # out = Conv3D(40, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
         # out = Conv3D(40, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
         # out = Conv3D(48, kernel_size=(75,3,3), strides=(15,1,1), padding='valid')(out)
-        out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
+        out = Conv3D(64, kernel_size=(1,4,4), strides=(1,1,1), padding='valid')(out)
         # out = BatchNormalization()(out)
         # out = LeakyReLU(alpha=0.05)(out)
-        out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
+        # out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
         # out = BatchNormalization()(out)
         # out = LeakyReLU(alpha=0.05)(out)
-        out = Conv3D(64, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
+        out = Conv3D(64, kernel_size=(1,3,4), strides=(1,1,1), padding='valid')(out)
         # out = BatchNormalization()(out)
         # out = LeakyReLU(alpha=0.05)(out)
         out = Reshape((out.shape[1].value, out.shape[-1].value))(out)
@@ -419,7 +419,7 @@ def visualise_feature_maps():
     '''
 
 if __name__ == '__main__': # if this file is been run directly by Python
-    # train()
+    train()
     evaluate()
     # visualise()
     # visualise_feature_maps()
