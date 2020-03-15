@@ -55,12 +55,12 @@ def layers(inputs, params=None):
     # unit = Convolution2D(1, (1,1), strides=(1,1), padding='valid')(branch_outputs[0])
     pipe = Add()(branch_outputs)
     """
-    pipe = Conv3D(64, (25,6,7), strides=(5,1,1), padding='valid')(inputs)
+    pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     # pipe = Dropout(0.5)(pipe)
     pipe = Reshape((pipe.shape[1].value, 64))(pipe)
-    pipe = AveragePooling1D(pool_size=(3), strides=(3))(pipe)
+    pipe = AveragePooling1D(pool_size=(75), strides=(1))(pipe)
     pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
     return pipe
@@ -243,7 +243,7 @@ def train():
                     for i in range(len(subjects_train))]
 
     # Iterate training on each subject separately
-    for i in range(2):
+    for i in range(1):
         train_index = subj_train_order[i]
         np.random.seed(123)
         X, y, _ = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
@@ -273,7 +273,7 @@ def evaluate():
                     for i in range(len(subjects_test))]
     
     # Iterate test on each subject separately
-    for i in range(2):
+    for i in range(1):
         test_index = subj_test_order[i]
         X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
         ''' Test Model '''
