@@ -30,7 +30,7 @@ from matplotlib import cm
 '''  Parameters '''
 # folder_path = 'model_results_fb_local - good results'
 folder_path = 'model_results_fb_local_2'
-batch_size = 256
+batch_size = 512
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 40
@@ -65,11 +65,10 @@ def new_layers(inputs, params=None):
         # out = Conv3D(40, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
         # out = Conv3D(40, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
         # out = Conv3D(48, kernel_size=(75,3,3), strides=(15,1,1), padding='valid')(out)
-        out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
+        out = Conv3D(64, kernel_size=(25,3,3), strides=(5,1,1), padding='valid')(out)
         out = BatchNormalization()(out)
         out = LeakyReLU(alpha=0.05)(out)
-        out = AveragePooling3D(pool_size=(75,1,1), strides=(15,1,1))(out)
-        out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
+        out = Conv3D(64, kernel_size=(5,3,3), strides=(3,1,1), padding='valid')(out)
         # out = BatchNormalization()(out)
         out = LeakyReLU(alpha=0.05)(out)
         out = Conv3D(64, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
