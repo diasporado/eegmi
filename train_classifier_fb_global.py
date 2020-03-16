@@ -12,8 +12,7 @@ from keras.layers import BatchNormalization, \
     Input, LeakyReLU, AveragePooling1D, DepthwiseConv2D, Add, Lambda, Concatenate, Dense
 from keras import optimizers, callbacks, backend as K
 
-from keras.utils.generic_utils import get_custom_objects
-from methods import se_block, build_crops, square, Square, Log, safe_log, plot_mne_vis, plot_feature_maps
+from methods import se_block, build_crops, plot_mne_vis, plot_feature_maps
 from DataGenerator import DataGenerator
 import read_bci_data_fb
 
@@ -27,20 +26,17 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 
 '''  Parameters '''
-folder_path = 'model_results_fb_global - good results'
-batch_size = 512
+folder_path = 'model_results_fb_global_2'
+batch_size = 256
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 channel_indices = [3,8,9,10,11,12,14,15,16,17,18,19,20,22,23,24,25,26,30,31,32,38]
-n_epoch = 100
+n_epoch = 50
 early_stopping = 10
 
 '''
 Training model for classification of EEG samples into motor imagery classes
 '''
-
-get_custom_objects().update({'square': Square(square)})
-get_custom_objects().update({'log': Log(safe_log)})
     
 def layers(inputs, params=None):
     """
@@ -55,13 +51,14 @@ def layers(inputs, params=None):
     # unit = Convolution2D(1, (1,1), strides=(1,1), padding='valid')(branch_outputs[0])
     pipe = Add()(branch_outputs)
     """
-    pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
+    # pipe = Conv3D(64, (25,1,1), strides=(1,1,1), padding='valid')(inputs)
+    pipe = Conv3D(64, (15,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
-    pipe = Dropout(0.5)(pipe)
+    # pipe = Dropout(0.5)(pipe)
     pipe = Reshape((pipe.shape[1].value, 64))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
-    # pipe = Dropout(0.5)(pipe)
+    pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
     return pipe
 
@@ -95,9 +92,9 @@ def train_single_subj(X_list, y, train_indices, val_indices, subject):
     model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
     cb = [callbacks.ProgbarLogger(count_mode='steps'),
           callbacks.ReduceLROnPlateau(monitor='val_loss',factor=0.5,patience=5,min_lr=0.000001),
-          callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='loss',verbose=0,
+          callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_loss',verbose=0,
                                     save_best_only=True, period=1),
-          callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss')]
+          callbacks.EarlyStopping(patience=early_stopping, monitor='val_accuracy')]
     model.summary()
     model.fit_generator(
         generator=training_generator,
@@ -243,7 +240,7 @@ def train():
                     for i in range(len(subjects_train))]
 
     # Iterate training on each subject separately
-    for i in range(1):
+    for i in [0,4,5,6,7,8]:
         train_index = subj_train_order[i]
         np.random.seed(123)
         X, y, _ = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
@@ -255,7 +252,7 @@ def train():
             for b in range(trials):
                 X_indices.append((a, b))
         X_indices = np.array(X_indices)
-        train_indices, val_indices = train_test_split(X_indices, test_size=0.2)
+        train_indices, val_indices = train_test_split(X_indices, test_size=0.5)
         
         tf.compat.v1.reset_default_graph()
         with tf.compat.v1.Session() as sess:
@@ -273,7 +270,7 @@ def evaluate():
                     for i in range(len(subjects_test))]
     
     # Iterate test on each subject separately
-    for i in range(1):
+    for i in [0,4,5,6,7,8]:
         test_index = subj_test_order[i]
         X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
         ''' Test Model '''
@@ -356,7 +353,7 @@ def visualise_feature_maps():
 
 if __name__ == '__main__': # if this file is been run directly by Python
     
-    # train()
-    # evaluate()
-    visualise()
+    train()
+    evaluate()
+    # visualise()
     # visualise_feature_maps()
