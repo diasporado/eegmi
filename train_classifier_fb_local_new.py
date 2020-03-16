@@ -290,7 +290,7 @@ def train():
             for b in range(trials):
                 X_indices.append((a, b))
         X_indices = np.array(X_indices)
-        train_indices, val_indices = train_test_split(X_indices, test_size=0.5)
+        train_indices, val_indices = train_test_split(X_indices, test_size=0.2)
         
         tf.compat.v1.reset_default_graph()
         with tf.compat.v1.Session() as sess:
