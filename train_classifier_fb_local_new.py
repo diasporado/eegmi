@@ -65,7 +65,7 @@ def new_layers(inputs, params=None):
         # out = Conv3D(40, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
         # out = Conv3D(40, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
         # out = Conv3D(48, kernel_size=(75,3,3), strides=(15,1,1), padding='valid')(out)
-        out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
+        out = Conv3D(64, kernel_size=(25,3,3), strides=(1,1,1), padding='valid')(out)
         # out = BatchNormalization()(out)
         # out = LeakyReLU(alpha=0.05)(out)
         out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
