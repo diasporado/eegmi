@@ -189,7 +189,7 @@ class DepthwiseConv3D(Conv3D):
                                   self.kernel_size[1],
                                   self.kernel_size[2],
                                   self.input_dim,
-                                  )
+                                  self.depth_multiplier)
 
         self.depthwise_kernel = self.add_weight(
             shape=depthwise_kernel_shape,
