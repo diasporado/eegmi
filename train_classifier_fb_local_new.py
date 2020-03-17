@@ -76,6 +76,7 @@ def new_layers(inputs, params=None):
     pipe = Add()(branch_outputs)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
+    print(pipe.shape)
     pipe = Reshape((pipe.shape[1].value, pipe.shape[-1].value))(pipe)
     # pipe = concatenate(branch_outputs + [pipe], axis=2)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
