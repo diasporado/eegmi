@@ -30,7 +30,7 @@ from matplotlib import cm
 '''  Parameters '''
 # folder_path = 'model_results_fb_local - good results'
 folder_path = 'model_results_fb_local_2'
-batch_size = 64
+batch_size = 512
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 100
@@ -66,12 +66,13 @@ def new_layers(inputs, params=None):
         # out = Conv3D(40, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
         # out = Conv3D(48, kernel_size=(75,3,3), strides=(15,1,1), padding='valid')(out)
         out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
+        out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
+        out = Conv3D(64, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
         # out = LeakyReLU(alpha=0.05)(out)
-        out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=1)(out)
+        # out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=1)(out)
         # out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
         # out = LeakyReLU(alpha=0.05)(out)
-        out = DepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), padding='valid', depth_multiplier=1)(out)
-        print(out.shape)
+        # out = DepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), padding='valid', depth_multiplier=1)(out)
         branch_outputs.append(out)
     pipe = Add()(branch_outputs)
     pipe = BatchNormalization()(pipe)
