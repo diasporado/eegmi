@@ -189,7 +189,7 @@ class DepthwiseConv3D(Conv3D):
                                   self.kernel_size[1],
                                   self.kernel_size[2],
                                   self.input_dim,
-                                  self.depth_multiplier)
+                                  )
 
         self.depthwise_kernel = self.add_weight(
             shape=depthwise_kernel_shape,
@@ -199,7 +199,7 @@ class DepthwiseConv3D(Conv3D):
             constraint=self.depthwise_constraint)
 
         if self.use_bias:
-            self.bias = self.add_weight(shape=(self.groups * self.depth_multiplier,),
+            self.bias = self.add_weight(shape=(self.depth_multiplier,),
                                         initializer=self.bias_initializer,
                                         name='bias',
                                         regularizer=self.bias_regularizer,
