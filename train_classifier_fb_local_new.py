@@ -70,7 +70,7 @@ def new_layers(inputs, params=None):
         out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=64, groups=64)(out)
         # out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
         # out = LeakyReLU(alpha=0.05)(out)
-        out = DepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), padding='valid', depth_multiplier=64, groups=64)(out)
+        out = DepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), padding='valid', depth_multiplier=1, groups=64)(out)
         print(out.shape)
         branch_outputs.append(out)
     pipe = Add()(branch_outputs)

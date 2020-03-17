@@ -199,7 +199,7 @@ class DepthwiseConv3D(Conv3D):
             constraint=self.depthwise_constraint)
 
         if self.use_bias:
-            self.bias = self.add_weight(shape=(self.depth_multiplier,),
+            self.bias = self.add_weight(shape=(self.groups,),
                                         initializer=self.bias_initializer,
                                         name='bias',
                                         regularizer=self.bias_regularizer,
@@ -250,12 +250,12 @@ class DepthwiseConv3D(Conv3D):
             depth = input_shape[2]
             rows = input_shape[3]
             cols = input_shape[4]
-            out_filters = self.depth_multiplier
+            out_filters = self.groups
         elif self.data_format == 'channels_last':
             depth = input_shape[1]
             rows = input_shape[2]
             cols = input_shape[3]
-            out_filters = self.depth_multiplier
+            out_filters = self.groups
 
         depth = conv_utils.conv_output_length(depth, self.kernel_size[0],
                                              self.padding,
