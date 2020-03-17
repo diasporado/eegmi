@@ -230,9 +230,11 @@ class DepthwiseConv3D(Conv3D):
             outputs = []
             for i in range(self.depth_multiplier):
                 for j in range(self.input_dim):
+                    print(inputs[0][:, :, :, :, j].shape)
+                    print(inputs[0][:, :, :, :, j+1].shape)
                     outputs.append(
                         tf.nn.conv3d(
-                            inputs[0][:, :, :, :, j],
+                            inputs[0][:, :, :, :, j:j+1],
                             self.depthwise_kernel[:, :, :, j, i:i+1],
                             strides=self._strides,
                             padding=self._padding,
