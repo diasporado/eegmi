@@ -32,7 +32,7 @@ def depthwise_conv3d_args_preprocessor(args, kwargs):
     args, kwargs, _converted = conv3d_args_preprocessor(args, kwargs)
     return args, kwargs, converted + _converted
 
-legacy_depthwise_conv3d_support = generate_legacy_interface(
+    legacy_depthwise_conv3d_support = generate_legacy_interface(
     allowed_positional_args=['filters', 'kernel_size'],
     conversions=[('nb_filter', 'filters'),
                  ('subsample', 'strides'),
@@ -118,7 +118,7 @@ class DepthwiseConv3D(Conv3D):
         `rows` and `cols` values might have changed due to padding.
     """
 
-    @legacy_depthwise_conv3d_support
+    #@legacy_depthwise_conv3d_support
     def __init__(self,
                  kernel_size,
                  strides=(1, 1, 1),
@@ -160,32 +160,36 @@ class DepthwiseConv3D(Conv3D):
         self._padding = _preprocess_padding(self.padding)
         self._strides = (1,) + self.strides + (1,)
         self._data_format = "NDHWC"
-        self.channel_axis = -1
+        self.input_dim = None
 
     def build(self, input_shape):
         if len(input_shape) < 5:
-            raise ValueError('Inputs to `conv3d` should have rank 5. '
+            raise ValueError('Inputs to `DepthwiseConv3D` should have rank 5. '
                              'Received input shape:', str(input_shape))
-        if input_shape[self.channel_axis] is None:
+        if self.data_format == 'channels_first':
+            channel_axis = 1
+        else:
+            channel_axis = -1
+        if input_shape[channel_axis] is None:
             raise ValueError('The channel dimension of the inputs to '
-                             '`conv3d` '
+                             '`DepthwiseConv3D` '
                              'should be defined. Found `None`.')
-        self.input_dim = int(input_shape[self.channel_axis])
+        self.input_dim = int(input_shape[channel_axis])
 
-        if (self.groups == None):
+        if self.groups is None:
             self.groups = self.input_dim
 
-        if (self.groups > self.input_dim):
+        if self.groups > self.input_dim:
             raise ValueError('The number of groups cannot exceed the number of channels')
 
-        if (self.input_dim % self.groups != 0):
-            raise ValueError('Warning! The channels dimension is not devisible by the group size chosen')
+        if self.input_dim % self.groups != 0:
+            raise ValueError('Warning! The channels dimension is not divisible by the group size chosen')
 
         depthwise_kernel_shape = (self.kernel_size[0],
                                   self.kernel_size[1],
                                   self.kernel_size[2],
-                                  self.input_dim, self.depth_multiplier)
-
+                                  self.input_dim,
+                                  self.depth_multiplier)
 
         self.depthwise_kernel = self.add_weight(
             shape=depthwise_kernel_shape,
@@ -195,7 +199,7 @@ class DepthwiseConv3D(Conv3D):
             constraint=self.depthwise_constraint)
 
         if self.use_bias:
-            self.bias = self.add_weight(shape=(self.input_dim,),
+            self.bias = self.add_weight(shape=(self.groups * self.depth_multiplier,),
                                         initializer=self.bias_initializer,
                                         name='bias',
                                         regularizer=self.bias_regularizer,
@@ -203,34 +207,32 @@ class DepthwiseConv3D(Conv3D):
         else:
             self.bias = None
         # Set input spec.
-        self.input_spec = InputSpec(ndim=5, axes={self.channel_axis: self.input_dim})
+        self.input_spec = InputSpec(ndim=5, axes={channel_axis: self.input_dim})
         self.built = True
 
     def call(self, inputs, training=None):
         inputs = _preprocess_conv3d_input(inputs, self.data_format)
 
         if self.data_format == 'channels_last':
-            dilation = (1,) + tuple(self.dilation_rate) + (1,)
+            dilation = (1,) + self.dilation_rate + (1,)
         else:
-            dilation = tuple(self.dilation_rate) + (1,) + (1,)
-        
-        # inputs = tf.split(inputs[0], self.group_num, axis=self.channel_axis)
+            dilation = self.dilation_rate + (1,) + (1,)
 
-        if self._data_format == 'NCDHW' :
+        if self._data_format == 'NCDHW':
             outputs = tf.concat(
-                [tf.nn.conv3d(inputs[0][:,i:i+self.input_dim//self.groups,:,:,:], self.depthwise_kernel[:,:,:,i:i+self.input_dim//self.groups,:],
+                [tf.nn.conv3d(inputs[0][:, i:i+self.input_dim//self.groups, :, :, :], self.depthwise_kernel[:, :, :, i:i+self.input_dim//self.groups, :],
                     strides=self._strides,
                     padding=self._padding,
                     dilations=dilation,
-                    data_format=self._data_format) for i in range(0,self.input_dim,self.input_dim//self.groups)], axis=1)
+                    data_format=self._data_format) for i in range(0, self.input_dim, self.input_dim//self.groups)], axis=1)
 
         else:
-            outputs = tf.nn.conv3d(inputs[0], self.depthwise_kernel,
+            outputs = tf.concat(
+                [tf.nn.conv3d(inputs[0][:, :, :, :, i:i+self.input_dim//self.groups], self.depthwise_kernel[:, :, :, i:i+self.input_dim//self.groups, :],
                     strides=self._strides,
                     padding=self._padding,
                     dilations=dilation,
-                    data_format=self._data_format)
-
+                    data_format=self._data_format) for i in range(0, self.input_dim, self.input_dim//self.groups)], axis=-1)
 
         if self.bias is not None:
             outputs = K.bias_add(
@@ -248,12 +250,12 @@ class DepthwiseConv3D(Conv3D):
             depth = input_shape[2]
             rows = input_shape[3]
             cols = input_shape[4]
-            out_filters = self.depth_multiplier
+            out_filters = self.groups * self.depth_multiplier
         elif self.data_format == 'channels_last':
             depth = input_shape[1]
             rows = input_shape[2]
             cols = input_shape[3]
-            out_filters = self.depth_multiplier
+            out_filters = self.groups * self.depth_multiplier
 
         depth = conv_utils.conv_output_length(depth, self.kernel_size[0],
                                              self.padding,
