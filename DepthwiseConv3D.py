@@ -242,6 +242,7 @@ class DepthwiseConv3D(Conv3D):
                         )
                     )
             outputs = tf.concat(outputs, axis=-1)
+            print(outputs.shape)
             '''
             outputs = tf.concat(
                 [tf.nn.conv3d(inputs[0][:, :, :, :, i:i+self.input_dim//self.groups], self.depthwise_kernel[:, :, :, :, i:i+self.depth_multiplier//self.groups],
@@ -267,12 +268,12 @@ class DepthwiseConv3D(Conv3D):
             depth = input_shape[2]
             rows = input_shape[3]
             cols = input_shape[4]
-            out_filters = self.groups
+            out_filters = self.depth_multiplier
         elif self.data_format == 'channels_last':
             depth = input_shape[1]
             rows = input_shape[2]
             cols = input_shape[3]
-            out_filters = self.groups
+            out_filters = self.depth_multiplier
 
         depth = conv_utils.conv_output_length(depth, self.kernel_size[0],
                                              self.padding,
