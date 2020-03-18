@@ -352,7 +352,7 @@ def visualise_feature_maps():
 
 if __name__ == '__main__': # if this file is been run directly by Python
     
-    train()
-    evaluate()
-    # visualise()
+    # train()
+    # evaluate()
+    visualise()
     # visualise_feature_maps()
