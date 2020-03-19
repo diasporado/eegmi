@@ -22,10 +22,10 @@ pretrained_folder_path_2 = 'model_results_fb_local - good results'
 use_center_loss = False
 use_contrastive_center_loss = False
 n_channels = 9
-batch_size = 256
+batch_size = 512
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 50
-early_stopping = 10
+n_epoch = 100
+early_stopping = 30
 
 '''
 Training model for classification of EEG samples into motor imagery classes
@@ -81,7 +81,6 @@ def train(X_list, y, train_indices, val_indices, subject):
 
     model = Model(inputs=inputs, outputs=output)
     model_path = './{}/A0{:d}_model.hdf5'.format(folder_path,subject)
-    opt = optimizers.adam(lr=0.01, beta_2=0.999)
     model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
     
     model.summary()
@@ -90,7 +89,7 @@ def train(X_list, y, train_indices, val_indices, subject):
           callbacks.ReduceLROnPlateau(monitor='val_loss',factor=0.5,patience=3,min_lr=0.00001),
           callbacks.ModelCheckpoint(model_path,monitor='loss',verbose=0,
                                     save_best_only=True, period=1),
-          callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss')]
+          callbacks.EarlyStopping(patience=early_stopping, monitor='val_accuracy')]
 
     model.fit_generator(
         generator=training_generator,
