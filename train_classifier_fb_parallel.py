@@ -11,8 +11,6 @@ from keras.layers import Dense,BatchNormalization, Add, \
     Input, concatenate, LeakyReLU, AveragePooling1D, Embedding, Lambda
 from keras import optimizers, callbacks, backend as K
 
-from GroupDepthwiseConv3D import GroupDepthwiseConv3D
-from DepthwiseConv3D import DepthwiseConv3D
 from methods import se_block, build_crops
 from DataGenerator import DataGenerator
 import read_bci_data_fb
@@ -40,62 +38,16 @@ def layers(inputs, params=None):
         # Slicing the ith channel:
         out = Lambda(lambda x: x[:,:,:,:,i])(inputs)
         out = Lambda(lambda x: K.expand_dims(x, -1))(out)
-        out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
-        # out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=64, groups=1)(inputs)
-        # out = LeakyReLU(alpha=0.05)(out)
-        out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
-        # out = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), padding='valid', depth_multiplier=1, groups=1)(out)
-        # out = LeakyReLU(alpha=0.05)(out)
-        out = Conv3D(64, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
-        out = BatchNormalization()(out)
-        out = LeakyReLU(alpha=0.05)(out)
-        # out = DepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), padding='valid', depth_multiplier=1, groups=1)(out)
-        out = Reshape((out.shape[1].value, out.shape[-1].value))(out)
-        #out = Add()([Lambda(lambda x: x[:,:,i])(out) for i in range(9)])
-        # out = Lambda(lambda x: K.expand_dims(x, -1))(out)
-        branch_outputs.append(out)
-    pipe1 = Add()(branch_outputs)
-    ''' 
-    pipe1 = GroupDepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), group_multiplier=64, padding='valid', group_size=1)(inputs)
-    pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    pipe1 = GroupDepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), group_multiplier=1, padding='valid', group_size=1)(pipe1)
-    pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    pipe1 = GroupDepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), group_multiplier=1, padding='valid', group_size=1)(pipe1)
-    # pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=7, padding='valid', groups=9)(inputs)
-    # pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    # pipe1 = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=7, padding='valid', groups=64)(pipe1)
-    # pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-    # pipe1 = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe1)
-    
-    pipe1 = Reshape((pipe1.shape[1].value, 64, 9))(pipe1)
-    pipe1 = Add()([Lambda(lambda x: x[:,:,:,i])(pipe1) for i in range(9)])
-    '''
-    # pipe1 = concatenate(branch_outputs, axis=2)
-    pipe1 = AveragePooling1D(pool_size=(75), strides=(15))(pipe1)
-
-    pipe2 = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
-    pipe2 = BatchNormalization()(pipe2)
-    pipe2 = LeakyReLU(alpha=0.05)(pipe2)
-    pipe2 = Reshape((pipe2.shape[1].value, pipe2.shape[-1].value))(pipe2)
-    pipe2 = AveragePooling1D(pool_size=(75), strides=(15))(pipe2)
-
-    #pipe = concatenate([pipe1, pipe2], axis=2)
-    pipe = Add()([pipe1, pipe2])
-    pipe = concatenate([pipe, pipe1, pipe2], axis=2)
-    pipe = Dropout(0.5)(pipe)
-    pipe = Flatten()(pipe)
-    return pipe
-
-def local_model_layers(inputs, params=None):
-    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(inputs)
-    # pipe = BatchNormalization()(pipe)
-    pipe = LeakyReLU(alpha=0.05)(pipe)
-    pipe = DepthwiseConv3D(kernel_size=(1,3,3), strides=(1,1,1), depth_multiplier=64, padding='valid', groups=params['n_channels'])(pipe)
-    pipe = LeakyReLU(alpha=0.05)(pipe)
-    pipe = Conv3D(64, (1,2,3), strides=(1,1,1), padding='valid')(pipe)
+        pipe1 = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
+        pipe1 = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(pipe1)
+        pipe1 = Conv3D(64, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(pipe1)
+        pipe2 = Conv3D(64, kernel_size=(1,6,7), strides=(1,1,1), padding='valid')(out)
+        combined = concatenate([pipe1, pipe2], axis=-1)        
+        branch_outputs.append(combined)
+    pipe = concatenate(branch_outputs, axis=-1)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
-    pipe = Reshape((pipe.shape[1].value, 64))(pipe)
+    pipe = Reshape((pipe.shape[1].value, pipe.shape[-1].value))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
     pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
@@ -129,32 +81,6 @@ def train(X_list, y, train_indices, val_indices, subject):
 
     model = Model(inputs=inputs, outputs=output)
     model_path = './{}/A0{:d}_model.hdf5'.format(folder_path,subject)
-    '''
-    pretrained_model_path_1 = './{}/A0{:d}_model.hdf5'.format(pretrained_folder_path_1,subject)
-    pretrained_model_path_2 = './{}/A0{:d}_model.hdf5'.format(pretrained_folder_path_2,subject)
-    pretrained_model_global = load_model(pretrained_model_path_1)
-    
-    local_pipeline = local_model_layers(inputs, params)
-    local_output = Dense(output_dim, activation=activation)(local_pipeline)
-    pretrained_model_local = Model(inputs=inputs, outputs=local_output)
-    pretrained_model_local.load_weights(pretrained_model_path_2)
-
-    
-    for ind, layer in enumerate(model.layers):
-        if layer.name == 'depthwise_conv3d_1':
-            model.layers[ind].set_weights(pretrained_model_local.layers[1].get_weights())
-        if layer.name == 'depthwise_conv3d_2':
-            model.layers[ind].set_weights(pretrained_model_local.layers[3].get_weights())
-        if layer.name == 'batch_normalization_1':
-            model.layers[ind].set_weights(pretrained_model_local.layers[6].get_weights())
-        if layer.name == 'conv3d_1':
-            model.layers[ind].set_weights(pretrained_model_local.layers[5].get_weights())
-        if layer.name == 'conv3d_2':
-            model.layers[ind].set_weights(pretrained_model_global.layers[1].get_weights())
-        if layer.name == 'batch_normalization_2':
-            model.layers[ind].set_weights(pretrained_model_global.layers[2].get_weights())
-    '''
-
     opt = optimizers.adam(lr=0.01, beta_2=0.999)
     model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
     
