@@ -56,7 +56,7 @@ def layers(inputs, params=None):
     # pipe = BatchNormalization()(pipe)
     # pipe = LeakyReLU(alpha=0.05)(pipe)
     # pipe = Dropout(0.5)(pipe)
-    pipe = Reshape((pipe.shape[1].value, 64))(pipe)
+    pipe = Reshape((pipe.shape[1].value, pipe.shape[-1].value))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
     pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
