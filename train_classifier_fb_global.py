@@ -31,29 +31,30 @@ batch_size = 512
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 channel_indices = [3,8,9,10,11,12,14,15,16,17,18,19,20,22,23,24,25,26,30,31,32,38]
-n_epoch = 50
-early_stopping = 10
+n_epoch = 100
+early_stopping = 30
 
 '''
 Training model for classification of EEG samples into motor imagery classes
 '''
     
 def layers(inputs, params=None):
-    """
+    
     branch_outputs = []
-    pipe = Reshape((inputs.shape[1].value, inputs.shape[2].value * inputs.shape[3].value, inputs.shape[4].value))(inputs)
+    # pipe = Reshape((inputs.shape[1].value, inputs.shape[2].value * inputs.shape[3].value, inputs.shape[4].value))(inputs)
     for i in range(n_channels):
         # Slicing the ith channel:
-        out = Lambda(lambda x: x[:,:,:,i])(pipe)
+        out = Lambda(lambda x: x[:,:,:,:,i])(inputs)
         out = Lambda(lambda x: K.expand_dims(x, -1))(out)
-        out = DepthwiseConv2D(kernel_size=(1,42), strides=(1,1), padding='valid', depth_multiplier=64)(out)
+        out = Conv3D(64, kernel_size=(1,6,7), strides=(1,1,1), padding='valid')(out)
+        out = BatchNormalization()(out)
+        out = LeakyReLU(alpha=0.05)(out)
         branch_outputs.append(out)
-    # unit = Convolution2D(1, (1,1), strides=(1,1), padding='valid')(branch_outputs[0])
-    pipe = Add()(branch_outputs)
-    """
-    pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
-    pipe = BatchNormalization()(pipe)
-    pipe = LeakyReLU(alpha=0.05)(pipe)
+    # pipe = Add()(branch_outputs)
+    pipe = Concatenate(branch_outputs, axis=-1)
+    # pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
+    # pipe = BatchNormalization()(pipe)
+    # pipe = LeakyReLU(alpha=0.05)(pipe)
     # pipe = Dropout(0.5)(pipe)
     pipe = Reshape((pipe.shape[1].value, 64))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
@@ -90,7 +91,7 @@ def train_single_subj(X_list, y, train_indices, val_indices, subject):
     opt = optimizers.adam(lr=0.001, beta_2=0.999)
     model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
     cb = [callbacks.ProgbarLogger(count_mode='steps'),
-          callbacks.ReduceLROnPlateau(monitor='val_loss',factor=0.5,patience=5,min_lr=0.000001),
+          callbacks.ReduceLROnPlateau(monitor='val_loss',factor=0.5,patience=3,min_lr=0.000001),
           callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_loss',verbose=0,
                                     save_best_only=True, period=1),
           callbacks.EarlyStopping(patience=early_stopping, monitor='val_accuracy')]
@@ -239,7 +240,7 @@ def train():
                     for i in range(len(subjects_train))]
 
     # Iterate training on each subject separately
-    for i in [0,4,5,6,7,8]:
+    for i in [0]:
         train_index = subj_train_order[i]
         np.random.seed(123)
         X, y, _ = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
@@ -269,7 +270,7 @@ def evaluate():
                     for i in range(len(subjects_test))]
     
     # Iterate test on each subject separately
-    for i in [0,4,5,6,7,8]:
+    for i in [0]:
         test_index = subj_test_order[i]
         X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
         ''' Test Model '''
@@ -352,7 +353,7 @@ def visualise_feature_maps():
 
 if __name__ == '__main__': # if this file is been run directly by Python
     
-    # train()
-    # evaluate()
-    visualise()
+    train()
+    evaluate()
+    # visualise()
     # visualise_feature_maps()
