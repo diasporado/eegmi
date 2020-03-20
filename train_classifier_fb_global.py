@@ -50,13 +50,14 @@ def layers(inputs, params=None):
         out = BatchNormalization()(out)
         out = LeakyReLU(alpha=0.05)(out)
         branch_outputs.append(out)
-    pipe = Add()(branch_outputs)
-    pipe = concatenate(branch_outputs + [pipe], axis=-1)
+    # pipe1 = Add()(branch_outputs)
+    pipe1 = concatenate(branch_outputs, axis=-1)
     
-    # pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
-    # pipe = BatchNormalization()(pipe)
-    # pipe = LeakyReLU(alpha=0.05)(pipe)
-    # pipe = Dropout(0.5)(pipe)
+    pipe2 = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
+    pipe2 = BatchNormalization()(pipe2)
+    pipe2 = LeakyReLU(alpha=0.05)(pipe2)
+    # pipe2 = Dropout(0.5)(pipe)
+    pipe = concatenate([pipe1, pipe2], axis=-1)
     pipe = Reshape((pipe.shape[1].value, pipe.shape[-1].value))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
     pipe = Dropout(0.5)(pipe)
@@ -354,7 +355,7 @@ def visualise_feature_maps():
 
 if __name__ == '__main__': # if this file is been run directly by Python
     
-    # train()
+    train()
     evaluate()
     # visualise()
     # visualise_feature_maps()
