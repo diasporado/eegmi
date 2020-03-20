@@ -9,7 +9,7 @@ from keras import backend as K
 from keras.models import Model, Sequential, load_model
 from keras.layers import BatchNormalization, \
     Activation,Flatten,Dropout,Reshape,Conv3D, Convolution2D, \
-    Input, LeakyReLU, AveragePooling1D, DepthwiseConv2D, Add, Lambda, Concatenate, Dense
+    Input, LeakyReLU, AveragePooling1D, DepthwiseConv2D, Add, Lambda, concatenate, Dense
 from keras import optimizers, callbacks, backend as K
 
 from methods import se_block, build_crops, plot_mne_vis, plot_feature_maps
@@ -51,7 +51,7 @@ def layers(inputs, params=None):
         out = LeakyReLU(alpha=0.05)(out)
         branch_outputs.append(out)
     # pipe = Add()(branch_outputs)
-    pipe = Concatenate(branch_outputs, axis=-1)
+    pipe = concatenate(branch_outputs, axis=-1)
     # pipe = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
     # pipe = BatchNormalization()(pipe)
     # pipe = LeakyReLU(alpha=0.05)(pipe)
