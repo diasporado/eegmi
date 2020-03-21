@@ -34,7 +34,7 @@ batch_size = 512
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 100
-early_stopping = 30
+early_stopping = 50
 
 '''
 Training model for classification of EEG samples into motor imagery classes
