@@ -29,7 +29,7 @@ from matplotlib import cm
 
 '''  Parameters '''
 # folder_path = 'model_results_fb_local - good results'
-folder_path = 'model_results_fb_local_2'
+folder_path = 'model_results_fb_local'
 batch_size = 512
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
@@ -56,6 +56,7 @@ def layers(inputs, params=None):
     return pipe
 
 def new_layers(inputs, params=None):
+    '''
     branch_outputs = []
     for i in range(params['n_channels']):
         # Slicing the ith channel:
@@ -76,9 +77,13 @@ def new_layers(inputs, params=None):
         # out = DepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), padding='valid', depth_multiplier=1)(out)
         branch_outputs.append(out)
     # pipe = Add()(branch_outputs)
-    # pipe = BatchNormalization()(pipe)
-    # pipe = LeakyReLU(alpha=0.05)(pipe)
-    pipe = concatenate(branch_outputs, axis=-1)
+    '''
+    # pipe = concatenate(branch_outputs, axis=-1)
+    pipe = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(inputs)
+    pipe = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(pipe)
+    pipe = Conv3D(64, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(pipe)
+    pipe = BatchNormalization()(pipe)
+    pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Reshape((pipe.shape[1].value, pipe.shape[-1].value))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
     pipe = Dropout(0.5)(pipe)
@@ -204,7 +209,8 @@ def evaluate_layer(X_list, X_indices, subject):
     model.load_weights('./{}/{}.hdf5'.format(folder_path, model_name))
     models = []
     for layer in range(9):
-        model_layer = Model(inputs=model.inputs, outputs=model.layers[28+layer].output)
+        model_layer = Model(inputs=model.inputs, outputs=model.layers[37+layer].output)
+        # model_layer = Model(inputs=model.inputs, outputs=model.layers[28+layer].output)
         # model_layer = Model(inputs=model.inputs, outputs=model.layers[19+layer].output)
         if layer == 0:
             model_layer.summary()
@@ -308,7 +314,7 @@ def evaluate(visualise=False):
                     for i in range(len(subjects_test))]
     
     # Iterate test on each subject separately
-    for i in range(3,8):
+    for i in range(7,8):
         test_index = subj_test_order[i]
         X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
         ''' Test Model '''
@@ -370,7 +376,7 @@ def visualise_feature_maps():
 
     overall_min_ys = []
     overall_max_ys = []
-    for i in [0]:
+    for i in [0,6]:
         test_index = subj_test_order[i]
         X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=True, drop_rejects=True, subj=test_index)
         # Split by class
@@ -405,7 +411,7 @@ def visualise_feature_maps():
             # y_preds_scaled = []
             y_preds_scaled = scaler.fit_transform(y_preds.flatten().reshape(-1,1))
             y_preds_scaled = y_preds_scaled.reshape(shape)
-            plot_feature_maps(y_preds_scaled, y_preds, 4, 9, title="subj_{}_layer2".format(i), vmin=min_y, vmax=max_y)
+            plot_feature_maps(y_preds_scaled, y_preds, 4, 9, title="subj_{}_layer3".format(i), vmin=min_y, vmax=max_y)
     '''
     overall_min_y = min(overall_min_ys)
     overall_max_y = max(overall_max_ys)
@@ -419,7 +425,7 @@ def visualise_feature_maps():
     '''
 
 if __name__ == '__main__': # if this file is been run directly by Python
-    # train()
+    train()
     evaluate()
     # visualise()
     # visualise_feature_maps()
