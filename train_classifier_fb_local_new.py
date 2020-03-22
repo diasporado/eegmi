@@ -79,7 +79,7 @@ def new_layers(inputs, params=None):
     # pipe = Add()(branch_outputs)
     '''
     # pipe = concatenate(branch_outputs, axis=-1)
-    pipe = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(inputs)
+    pipe = Conv3D(64, kernel_size=(15,3,3), strides=(1,1,1), padding='valid')(inputs)
     pipe = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(pipe)
     pipe = Conv3D(64, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(pipe)
     pipe = BatchNormalization()(pipe)
