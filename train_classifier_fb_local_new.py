@@ -8,7 +8,7 @@ import tensorflow as tf
 from keras.models import Model, Sequential, load_model
 from keras.layers import Dense,BatchNormalization, DepthwiseConv2D, Convolution2D, \
     Activation,Flatten,Dropout,Reshape,Conv3D,TimeDistributed, AveragePooling3D, \
-    Input, concatenate, LeakyReLU, AveragePooling1D, Lambda, Add
+    Input, concatenate, LeakyReLU, AveragePooling1D, Lambda, Add, Permute
 from keras import optimizers, callbacks, backend as K
 
 from DepthwiseConv3D import DepthwiseConv3D
@@ -56,7 +56,7 @@ def layers(inputs, params=None):
     return pipe
 
 def new_layers(inputs, params=None):
-    '''
+    
     branch_outputs = []
     for i in range(params['n_channels']):
         # Slicing the ith channel:
@@ -74,17 +74,20 @@ def new_layers(inputs, params=None):
         # out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
         out = BatchNormalization()(out)
         out = LeakyReLU(alpha=0.05)(out)
-        # out = DepthwiseConv3D(kernel_size=(1,2,3), strides=(1,1,1), padding='valid', depth_multiplier=1)(out)
+        out = Reshape((pipe.shape[1].value, 64, 1))(out)
         branch_outputs.append(out)
     # pipe = Add()(branch_outputs)
-    '''
-    # pipe = concatenate(branch_outputs, axis=-1)
-    pipe = Conv3D(64, kernel_size=(15,3,3), strides=(1,1,1), padding='valid')(inputs)
-    pipe = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(pipe)
-    pipe = Conv3D(64, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(pipe)
-    pipe = BatchNormalization()(pipe)
+    
+    pipe = concatenate(branch_outputs, axis=-1)
+    pipe = Permute((1,3,2))(pipe)
+    pipe = Convolution2D(64, kernel_size=(1,9), strides=(1,1), padding='valid')(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
-    pipe = Reshape((pipe.shape[1].value, pipe.shape[-1].value))(pipe)
+    # pipe = Conv3D(64, kernel_size=(15,3,3), strides=(1,1,1), padding='valid')(inputs)
+    # pipe = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(pipe)
+    # pipe = Conv3D(64, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(pipe)
+    # pipe = BatchNormalization()(pipe)
+    # pipe = LeakyReLU(alpha=0.05)(pipe)
+    # pipe = Reshape((pipe.shape[1].value, pipe.shape[-1].value))(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
     pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
