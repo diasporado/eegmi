@@ -26,7 +26,7 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 
 '''  Parameters '''
-folder_path = 'model_results_fb_global_2'
+folder_path = 'model_results_fb_global_3'
 batch_size = 512
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
