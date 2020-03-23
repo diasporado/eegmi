@@ -32,7 +32,7 @@ n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 channel_indices = [3,8,9,10,11,12,14,15,16,17,18,19,20,22,23,24,25,26,30,31,32,38]
 n_epoch = 100
-early_stopping = 50
+early_stopping = 30
 
 '''
 Training model for classification of EEG samples into motor imagery classes
@@ -244,7 +244,7 @@ def train():
                     for i in range(len(subjects_train))]
 
     # Iterate training on each subject separately
-    for i in range(9):
+    for i in range(1):
         train_index = subj_train_order[i]
         np.random.seed(123)
         X, y, _ = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
@@ -274,7 +274,7 @@ def evaluate():
                     for i in range(len(subjects_test))]
     
     # Iterate test on each subject separately
-    for i in range(9):
+    for i in range(1):
         test_index = subj_test_order[i]
         X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
         ''' Test Model '''
@@ -357,7 +357,7 @@ def visualise_feature_maps():
 
 if __name__ == '__main__': # if this file is been run directly by Python
     
-    # train()
+    train()
     evaluate()
     # visualise()
     # visualise_feature_maps()
