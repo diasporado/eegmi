@@ -41,8 +41,10 @@ Training model for classification of EEG samples into motor imagery classes
 def layers(inputs, params=None):
     
     branch_outputs = []
-    pipe = Reshape((inputs.shape[1].value, inputs.shape[2].value * inputs.shape[3].value, inputs.shape[4].value, 1))(inputs)
-    pipe = Conv3D(64, (1,42,9), strides=(1,1,1), padding='valid')(pipe)
+    # pipe = Reshape((inputs.shape[1].value, inputs.shape[2].value * inputs.shape[3].value, inputs.shape[4].value, 1))(inputs)
+    pipe = Conv3D(64, (1,1,1), strides=(1,1,1), padding='valid')(pipe)
+    pipe = BatchNormalization()(pipe)
+    pipe = LeakyReLU(alpha=0.05)(pipe)
     """
     for i in range(n_channels):
         # Slicing the ith channel:
@@ -57,7 +59,7 @@ def layers(inputs, params=None):
     # pipe1 = Add()(branch_outputs)
     # pipe = concatenate(branch_outputs, axis=-2)
     # pipe = Permute((1,3,2))(pipe)
-    # pipe = Conv3D(64, kernel_size=(1,64,9), strides=(1,1,1), padding='valid')(pipe)
+    pipe = Conv3D(64, kernel_size=(1,6,7), strides=(1,1,1), padding='valid')(pipe)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Reshape((pipe.shape[1].value, pipe.shape[-1].value))(pipe)
