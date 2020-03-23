@@ -25,7 +25,7 @@ n_channels = 9
 batch_size = 512
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 100
-early_stopping = 30
+early_stopping = 20
 
 '''
 Training model for classification of EEG samples into motor imagery classes
@@ -38,27 +38,26 @@ def layers(inputs, params=None):
         # Slicing the ith channel:
         out = Lambda(lambda x: x[:,:,:,:,i])(inputs)
         out = Lambda(lambda x: K.expand_dims(x, -1))(out)
-        pipe1 = Conv3D(8, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
-        pipe1 = Conv3D(8, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(pipe1)
-        pipe1 = Conv3D(8, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(pipe1)
-        pipe1 = BatchNormalization()(pipe1)
-        pipe1 = LeakyReLU(alpha=0.05)(pipe1)
-        pipe2 = Conv3D(8, kernel_size=(1,6,7), strides=(1,1,1), padding='valid')(out)
-        pipe2 = BatchNormalization()(pipe2)
-        pipe2 = LeakyReLU(alpha=0.05)(pipe2)
-        combined = concatenate([pipe1, pipe2], axis=-1)        
-        branch_outputs.append(combined)
-    pipe3 = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
-    pipe3 = BatchNormalization()(pipe3)
-    pipe3 = LeakyReLU(alpha=0.05)(pipe3)
-    pipe4 = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(inputs)
-    pipe4 = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(pipe4)
-    pipe4 = Conv3D(64, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(pipe4)
-    pipe4 = BatchNormalization()(pipe4)
-    pipe4 = LeakyReLU(alpha=0.05)(pipe4)
-    pipe5 = concatenate(branch_outputs, axis=-1)
-    pipe = concatenate([pipe3, pipe4, pipe5], axis=-1)
-    pipe = Reshape((pipe.shape[1].value, pipe.shape[-1].value))(pipe)
+        out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
+        out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
+        out = Conv3D(64, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
+        out = BatchNormalization()(out)
+        out = LeakyReLU(alpha=0.05)(out)
+        out = Reshape((out.shape[1].value, 64, 1))(out)
+        branch_outputs.append(out)
+    pipe1 = concatenate(branch_outputs, axis=-1)
+    pipe1 = Permute((1,3,2))(pipe1)
+    pipe1 = Convolution2D(64, kernel_size=(1,9), strides=(1,1), padding='valid')(pipe1)
+    pipe1 = BatchNormalization()(pipe1)
+    pipe1 = LeakyReLU(alpha=0.05)(pipe1)
+    pipe1 = Reshape((pipe1.shape[1].value, pipe1.shape[-1].value))(pipe1)
+    
+    pipe2 = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
+    pipe2 = BatchNormalization()(pipe2)
+    pipe2 = LeakyReLU(alpha=0.05)(pipe2)
+    pipe2 = Reshape((pipe2.shape[1].value, pipe2.shape[-1].value))(pipe2)
+
+    pipe = concatenate([pipe1, pipe2], axis=-1)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
     pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
