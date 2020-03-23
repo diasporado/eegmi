@@ -43,8 +43,6 @@ def layers(inputs, params=None):
     branch_outputs = []
     # pipe = Reshape((inputs.shape[1].value, inputs.shape[2].value * inputs.shape[3].value, inputs.shape[4].value, 1))(inputs)
     pipe = Conv3D(64, (1,1,1), strides=(1,1,1), padding='valid')(inputs)
-    pipe = BatchNormalization()(pipe)
-    pipe = LeakyReLU(alpha=0.05)(pipe)
     """
     for i in range(n_channels):
         # Slicing the ith channel:
