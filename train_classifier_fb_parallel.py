@@ -8,7 +8,7 @@ import tensorflow as tf
 from keras.models import Model, Sequential, load_model
 from keras.layers import Dense,BatchNormalization, Add, \
     Activation,Flatten,Dropout,Reshape,Conv3D,AveragePooling2D, DepthwiseConv2D, \
-    Input, concatenate, LeakyReLU, AveragePooling1D, Embedding, Lambda
+    Input, concatenate, LeakyReLU, AveragePooling1D, Embedding, Lambda, Permute
 from keras import optimizers, callbacks, backend as K
 
 from methods import se_block, build_crops
