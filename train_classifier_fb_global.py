@@ -9,7 +9,7 @@ from keras import backend as K
 from keras.models import Model, Sequential, load_model
 from keras.layers import BatchNormalization, \
     Activation,Flatten,Dropout,Reshape,Conv3D, Convolution2D, \
-    Input, LeakyReLU, AveragePooling1D, DepthwiseConv2D, Add, Lambda, concatenate, Dense
+    Input, LeakyReLU, AveragePooling1D, DepthwiseConv2D, Add, Lambda, concatenate, Dense, Permute
 from keras import optimizers, callbacks, backend as K
 
 from methods import se_block, build_crops, plot_mne_vis, plot_feature_maps
