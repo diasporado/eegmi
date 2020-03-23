@@ -58,8 +58,8 @@ def layers(inputs, params=None):
     pipe2 = Reshape((pipe2.shape[1].value, pipe2.shape[-1].value))(pipe2)
 
     pipe = concatenate([pipe1, pipe2], axis=-1)
-    pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
     pipe = Dropout(0.5)(pipe)
+    pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
     pipe = Flatten()(pipe)
     return pipe
 
