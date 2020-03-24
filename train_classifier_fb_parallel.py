@@ -25,7 +25,7 @@ n_channels = 9
 batch_size = 512
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 100
-early_stopping = 10
+early_stopping = 20
 
 '''
 Training model for classification of EEG samples into motor imagery classes
@@ -48,8 +48,8 @@ def layers(inputs, params=None):
     pipe1 = concatenate(branch_outputs, axis=-1)
     pipe1 = Permute((1,3,2))(pipe1)
     pipe1 = Convolution2D(64, kernel_size=(1,9), strides=(1,1), padding='valid')(pipe1)
-    # pipe1 = BatchNormalization()(pipe1)
-    # pipe1 = LeakyReLU(alpha=0.05)(pipe1)
+    pipe1 = BatchNormalization()(pipe1)
+    pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     pipe1 = Reshape((pipe1.shape[1].value, pipe1.shape[-1].value))(pipe1)
     
     pipe2 = Conv3D(64, (1,6,7), strides=(1,1,1), padding='valid')(inputs)
@@ -58,8 +58,8 @@ def layers(inputs, params=None):
     pipe2 = Reshape((pipe2.shape[1].value, pipe2.shape[-1].value))(pipe2)
 
     pipe = concatenate([pipe1, pipe2], axis=-1)
-    pipe = Dropout(0.5)(pipe)
     pipe = AveragePooling1D(pool_size=(75), strides=(15))(pipe)
+    pipe = Dropout(0.5)(pipe)
     pipe = Flatten()(pipe)
     return pipe
 
