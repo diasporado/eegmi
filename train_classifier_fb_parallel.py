@@ -48,7 +48,6 @@ def layers(inputs, params=None):
     pipe1 = concatenate(branch_outputs, axis=-1)
     pipe1 = Permute((1,3,2))(pipe1)
     pipe1 = Convolution2D(64, kernel_size=(1,9), strides=(1,1), padding='valid')(pipe1)
-    pipe1 = BatchNormalization()(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     pipe1 = Reshape((pipe1.shape[1].value, pipe1.shape[-1].value))(pipe1)
     
