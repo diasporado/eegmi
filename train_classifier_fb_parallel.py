@@ -6,48 +6,31 @@ import gc
 import tensorflow as tf
 
 from keras.models import Model, Sequential, load_model
-from keras.layers import Dense,BatchNormalization, Add, \
-    Activation,Flatten,Dropout,Reshape,Conv3D,AveragePooling2D, DepthwiseConv2D, \
-    Input, concatenate, LeakyReLU, AveragePooling1D, Embedding, Lambda, Permute, Convolution2D
+from keras.layers import Dense,BatchNormalization, \
+    Activation,Flatten,Dropout,Reshape,Conv3D, \
+    Input, concatenate, LeakyReLU, AveragePooling1D
 from keras import optimizers, callbacks, backend as K
 
-from methods import se_block, build_crops
+from methods import build_crops
 from DataGenerator import DataGenerator
 import read_bci_data_fb
 
 '''  Parameters '''
-folder_path = 'model_results_fb_parallel_3'
-pretrained_folder_path_1 = 'model_results_fb_global - good results'
-pretrained_folder_path_2 = 'model_results_fb_local - good results'
-use_center_loss = False
-use_contrastive_center_loss = False
+folder_path = 'model_results_fb_parallel'
 n_channels = 9
 batch_size = 512
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 100
-early_stopping = 20
+n_epoch = 500
+early_stopping = 50
 
 '''
 Training model for classification of EEG samples into motor imagery classes
 '''
 
-def layers(inputs, params=None):
-    
-    branch_outputs = []
-    for i in range(9):
-        # Slicing the ith channel:
-        out = Lambda(lambda x: x[:,:,:,:,i])(inputs)
-        out = Lambda(lambda x: K.expand_dims(x, -1))(out)
-        out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
-        out = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(out)
-        out = Conv3D(64, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(out)
-        out = BatchNormalization()(out)
-        out = LeakyReLU(alpha=0.05)(out)
-        out = Reshape((out.shape[1].value, 64, 1))(out)
-        branch_outputs.append(out)
-    pipe1 = concatenate(branch_outputs, axis=-1)
-    pipe1 = Permute((1,3,2))(pipe1)
-    pipe1 = Convolution2D(64, kernel_size=(1,9), strides=(1,1), padding='valid')(pipe1)
+def layers(inputs):
+    pipe1 = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(inputs)
+    pipe1 = Conv3D(64, kernel_size=(1,3,3), strides=(1,1,1), padding='valid')(pipe1)
+    pipe1 = Conv3D(64, kernel_size=(1,2,3), strides=(1,1,1), padding='valid')(pipe1)
     pipe1 = BatchNormalization()(pipe1)
     pipe1 = LeakyReLU(alpha=0.05)(pipe1)
     pipe1 = Reshape((pipe1.shape[1].value, pipe1.shape[-1].value))(pipe1)
@@ -72,8 +55,7 @@ def train(X_list, y, train_indices, val_indices, subject):
         'batch_size': batch_size,
         'n_classes': len(np.unique(y)),
         'n_channels': n_channels,
-        'shuffle': True,
-        'center_loss': use_center_loss
+        'shuffle': True
     }
 
     training_generator = DataGenerator(X_list, y, train_indices, **params)
@@ -86,7 +68,7 @@ def train(X_list, y, train_indices, val_indices, subject):
     opt = optimizers.adam(lr=0.001, beta_2=0.999)
  
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
-    pipeline = layers(inputs, params)
+    pipeline = layers(inputs)
     output = Dense(output_dim, activation=activation)(pipeline)
 
     model = Model(inputs=inputs, outputs=output)
@@ -118,8 +100,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
         'batch_size': trials,
         'n_classes': len(np.unique(y_test)),
         'n_channels': n_channels,
-        'shuffle': False,
-        'center_loss': use_center_loss
+        'shuffle': False
     }
 
     actual = [ all_classes[i] for i in y_test ]
@@ -130,7 +111,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     output_dim = params['n_classes']
     activation = 'softmax'
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
-    pipeline = layers(inputs, params)
+    pipeline = layers(inputs)
     output = Dense(output_dim, activation=activation)(pipeline)
 
     model = Model(inputs=inputs, outputs=output)
