@@ -8,11 +8,11 @@ import tensorflow as tf
 from keras import backend as K
 from keras.models import Model, Sequential, load_model
 from keras.layers import BatchNormalization, \
-    Activation,Flatten,Dropout,Reshape,Conv3D, Convolution2D, \
-    Input, LeakyReLU, AveragePooling1D, DepthwiseConv2D, Add, Lambda, concatenate, Dense, Permute
+    Activation,Flatten,Dropout,Reshape,Conv3D, \
+    Input, LeakyReLU, AveragePooling1D, Dense
 from keras import optimizers, callbacks, backend as K
 
-from methods import se_block, build_crops, plot_mne_vis, plot_feature_maps
+from methods import build_crops, plot_mne_vis, plot_feature_maps
 from DataGenerator import DataGenerator
 import read_bci_data_fb
 
@@ -26,38 +26,20 @@ import matplotlib.pyplot as plt
 from matplotlib import cm
 
 '''  Parameters '''
-folder_path = 'model_results_fb_global_3'
+folder_path = 'model_results_fb_global'
 batch_size = 512
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 channel_indices = [3,8,9,10,11,12,14,15,16,17,18,19,20,22,23,24,25,26,30,31,32,38]
-n_epoch = 200
-early_stopping = 5
+n_epoch = 500
+early_stopping = 50
 
 '''
 Training model for classification of EEG samples into motor imagery classes
 '''
     
-def layers(inputs, params=None):
-    
-    branch_outputs = []
-    # pipe = Reshape((inputs.shape[1].value, inputs.shape[2].value * inputs.shape[3].value, inputs.shape[4].value, 1))(inputs)
-    pipe = Conv3D(64, (1,1,1), strides=(1,1,1), padding='valid')(inputs)
-    """
-    for i in range(n_channels):
-        # Slicing the ith channel:
-        out = Lambda(lambda x: x[:,:,:,:,i])(inputs)
-        out = Lambda(lambda x: K.expand_dims(x, -1))(out)
-        out = Conv3D(64, kernel_size=(1,6,7), strides=(1,1,1), padding='valid')(out)
-        out = BatchNormalization()(out)
-        out = LeakyReLU(alpha=0.05)(out)
-        out = Reshape((out.shape[1].value, 64, 1, 1))(out)
-        branch_outputs.append(out)
-    """
-    # pipe1 = Add()(branch_outputs)
-    # pipe = concatenate(branch_outputs, axis=-2)
-    # pipe = Permute((1,3,2))(pipe)
-    pipe = Conv3D(64, kernel_size=(1,6,7), strides=(1,1,1), padding='valid')(pipe)
+def layers(inputs):
+    pipe = Conv3D(64, kernel_size=(1,6,7), strides=(1,1,1), padding='valid')(inputs)
     pipe = BatchNormalization()(pipe)
     pipe = LeakyReLU(alpha=0.05)(pipe)
     pipe = Reshape((pipe.shape[1].value, pipe.shape[-1].value))(pipe)
@@ -88,7 +70,7 @@ def train_single_subj(X_list, y, train_indices, val_indices, subject):
     activation = 'softmax'
 
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
-    pipeline = layers(inputs, params)
+    pipeline = layers(inputs)
     output = Dense(output_dim, activation=activation)(pipeline)
     model = Model(inputs=inputs, outputs=output)
 
@@ -127,7 +109,7 @@ def evaluate_single_subj(X_list, y_test, X_indices, subject):
     model_name = 'A0{:d}_model'.format(subject)
     output_dim = params['n_classes']
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
-    pipeline = layers(inputs, params)
+    pipeline = layers(inputs)
     output = Dense(output_dim, activation='softmax')(pipeline)
     model = Model(inputs=inputs, outputs=output)
     model.load_weights('./{}/{}.hdf5'.format(folder_path, model_name))
@@ -178,7 +160,7 @@ def evaluate_layer(X_list, X_indices, subject):
     model_name = 'A0{:d}_model'.format(subject)
     output_dim = params['n_classes']
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
-    pipeline = layers(inputs, params)
+    pipeline = layers(inputs)
     output = Dense(output_dim)(pipeline)
     model = Model(inputs=inputs, outputs=output)
     model.load_weights('./{}/{}.hdf5'.format(folder_path, model_name))
@@ -208,7 +190,7 @@ def build_correlation_map_single(X_list, subject, epochs):
     model_name = 'A0{:d}_model'.format(subject)
     output_dim = params['n_classes']
     inputs = Input(shape=(X_shape[1], X_shape[2], X_shape[3], X_shape[4]))
-    pipeline = layers(inputs, params)
+    pipeline = layers(inputs)
     output = Dense(output_dim)(pipeline)
     model = Model(inputs=inputs, outputs=output)
     model.load_weights('./{}/{}.hdf5'.format(folder_path, model_name))
@@ -244,7 +226,7 @@ def train():
                     for i in range(len(subjects_train))]
 
     # Iterate training on each subject separately
-    for i in range(1,9):
+    for i in range(9):
         train_index = subj_train_order[i]
         np.random.seed(123)
         X, y, _ = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
@@ -274,7 +256,7 @@ def evaluate():
                     for i in range(len(subjects_test))]
     
     # Iterate test on each subject separately
-    for i in range(1,9):
+    for i in range(9):
         test_index = subj_test_order[i]
         X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
         ''' Test Model '''
@@ -334,7 +316,7 @@ def visualise_feature_maps():
     subj_test_order = [ np.argwhere(np.array(subjects_test)==i+1)[0][0]
                     for i in range(len(subjects_test))]
 
-    for i in range(1):
+    for i in range(9):
         test_index = subj_test_order[i]
         X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
         # Split by class
@@ -356,7 +338,6 @@ def visualise_feature_maps():
             
 
 if __name__ == '__main__': # if this file is been run directly by Python
-    
     train()
     evaluate()
     # visualise()
