@@ -51,10 +51,10 @@ def se_block(input_tensor, compress_rate = 4):
  
     return out
 
-def build_crops(X, increment):
+def build_crops(X, increment, start_idx):
     print("Obtaining sliding window samples (original data)")
-    tmaximum = 500
-    tminimum = 0
+    tmaximum = 500 + start_idx
+    tminimum = start_idx
     X_list = []
     samplingfreq = 2
     
@@ -63,12 +63,14 @@ def build_crops(X, increment):
         tminimum=tminimum+increment
         tmaximum=tmaximum+increment
     
+    """
     tmaximum = 503
     tminimum = 3
     while (tmaximum<=1000):
         X_list.append(X[:,tminimum:tmaximum][:,::samplingfreq])
         tminimum=tminimum+increment
         tmaximum=tmaximum+increment
+    """
     
     return X_list
 

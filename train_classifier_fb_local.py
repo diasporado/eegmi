@@ -5,13 +5,12 @@ from sklearn.model_selection import train_test_split
 import gc
 import tensorflow as tf
 
-from keras.models import Model, Sequential, load_model
-from keras.layers import Dense,BatchNormalization, DepthwiseConv2D, Convolution2D, \
-    Activation,Flatten,Dropout,Reshape,Conv3D,TimeDistributed, AveragePooling3D, \
-    Input, concatenate, LeakyReLU, AveragePooling1D, Lambda, Add, Permute
+from keras.models import Model, load_model
+from keras.layers import Dense,BatchNormalization, \
+    Activation,Flatten,Dropout,Reshape,Conv3D, \
+    Input, concatenate, LeakyReLU, AveragePooling1D
 from keras import optimizers, callbacks, backend as K
 
-from DepthwiseConv3D import DepthwiseConv3D
 from methods import se_block, build_crops, plot_feature_maps, plot_mne_vis
 from DataGenerator import DataGenerator
 import read_bci_data_fb
@@ -33,7 +32,8 @@ batch_size = 512
 n_channels = 9
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
 n_epoch = 500
-early_stopping = 50
+early_stopping = 30
+channel_indices = [3,8,9,10,11,12,14,15,16,17,18,19,20,22,23,24,25,26,30,31,32,38]
 
 '''
 Training model for classification of EEG samples into motor imagery classes
@@ -82,7 +82,7 @@ def train_single_subj(X_list, y, train_indices, val_indices, subject):
           callbacks.ReduceLROnPlateau(monitor='val_loss',factor=0.5,patience=3,min_lr=0.00001),
           callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_loss',verbose=0,
                                     save_best_only=True, period=1),
-          callbacks.EarlyStopping(patience=early_stopping, monitor='val_accuracy')]
+          callbacks.EarlyStopping(patience=early_stopping, monitor='accuracy')]
     model.summary()
     model.fit_generator(
         generator=training_generator,
@@ -244,7 +244,7 @@ def train():
                     for i in range(len(subjects_train))]
 
     # Iterate training on each subject separately
-    for i in range(3,5):
+    for i in range(9):
         train_index = subj_train_order[i]
         np.random.seed(123)
         X, y, _ = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
@@ -274,7 +274,7 @@ def evaluate(visualise=False):
                     for i in range(len(subjects_test))]
     
     # Iterate test on each subject separately
-    for i in range(3,5):
+    for i in range(9):
         test_index = subj_test_order[i]
         X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
         ''' Test Model '''
