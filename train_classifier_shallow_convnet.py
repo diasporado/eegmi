@@ -5,15 +5,14 @@ from sklearn.model_selection import train_test_split
 import gc
 import tensorflow as tf
 
-from keras.models import Sequential, load_model, Model
-from keras.layers import Dense,BatchNormalization,AveragePooling2D,MaxPooling2D, \
-    Convolution2D,Activation,Flatten,Dropout,Convolution1D,Reshape,Conv3D,TimeDistributed,LSTM, \
-    concatenate, Input, AveragePooling3D, MaxPooling3D, AveragePooling1D, DepthwiseConv2D, Activation
-from keras.utils import np_utils
+from keras.models import load_model, Model
+from keras.layers import Dense,BatchNormalization, \
+    Convolution2D,Activation,Flatten,Dropout,Reshape,Conv3D, \
+    Input, AveragePooling1D, Activation
+
 from keras import optimizers, callbacks
 
 # Custom activation function
-from DepthwiseConv3D import DepthwiseConv3D
 from keras import backend as K
 from keras.utils.generic_utils import get_custom_objects
 
@@ -42,14 +41,15 @@ def layers(inputs):
 folder_path = 'model_results_shallow_convnet'
 batch_size = 512
 all_classes = ['LEFT_HAND','RIGHT_HAND','FEET','TONGUE']
-n_epoch = 80
-early_stopping = 10
+n_epoch = 500
+early_stopping = 30
+k_folds = 10
 
 '''
 Training model for classification of EEG samples into motor imagery classes
 '''
 
-def train(X_list, y, train_indices, val_indices, subject):
+def train(X_list, y, train_indices, val_indices, subject, fold):
     
     X_shape = X_list[0].shape # (samples, 250, 22)
     
@@ -77,10 +77,10 @@ def train(X_list, y, train_indices, val_indices, subject):
     opt = optimizers.adam(lr=0.001, beta_2=0.999)
     model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
     cb = [callbacks.ProgbarLogger(count_mode='steps'),
-          callbacks.ReduceLROnPlateau(monitor='loss',factor=0.5,patience=5,min_lr=0.0001),
-          callbacks.ModelCheckpoint('./{}/A0{:d}_model.hdf5'.format(folder_path,subject),monitor='val_loss',verbose=0,
+          callbacks.ReduceLROnPlateau(monitor='val_loss',factor=0.5,patience=5,min_lr=0.000001),
+          callbacks.ModelCheckpoint('./{}/{}/A0{:d}_model.hdf5'.format(folder_path,fold,subject),monitor='val_loss',verbose=0,
                                     save_best_only=True, period=1),
-          callbacks.EarlyStopping(patience=early_stopping, monitor='val_loss')]
+          callbacks.EarlyStopping(patience=early_stopping, monitor='accuracy')]
     model.summary()
     model.fit_generator(
         generator=training_generator,
@@ -89,7 +89,7 @@ def train(X_list, y, train_indices, val_indices, subject):
         workers=4, epochs=n_epoch, verbose=1, callbacks=cb)
 
 
-def evaluate_model(X_list, y_test, X_indices, subject):
+def evaluate_model(X_list, y_test, X_indices, subject, fold):
     
     X_shape = X_list[0].shape # (trials, 250, 22)
     trials = X_shape[0]
@@ -113,7 +113,7 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     pipeline = layers(inputs)
     output = Dense(output_dim, activation='softmax')(pipeline)
     model = Model(inputs=inputs, outputs=output)
-    model.load_weights('./{}/{}.hdf5'.format(folder_path,model_name))
+    model.load_weights('./{}/{}/{}.hdf5'.format(folder_path,fold,model_name))
 
     test_generator = DataGenerator(X_list, y_test, X_indices, **params)
     y_pred = model.predict_generator(
@@ -143,10 +143,11 @@ def evaluate_model(X_list, y_test, X_indices, subject):
     avg_tot = (out_df.apply(lambda x: round(x.mean(), 3) if x.name!="support" else  round(x.sum(), 3)).to_frame().T)
     avg_tot.index = ["avg/total"]
     out_df = out_df.append(avg_tot)
-    out_df.to_csv('./{}/{}.csv'.format(folder_path,model_name))
+    out_df.to_csv('./{}/{}/{}.csv'.format(folder_path,fold,model_name))
     
     print(metrics.classification_report(actual,predicted))
     print('kappa value: {}'.format(kappa_score))
+
 
 if __name__ == '__main__': # if this file is been run directly by Python
     
@@ -160,39 +161,40 @@ if __name__ == '__main__': # if this file is been run directly by Python
     subj_test_order = [ np.argwhere(np.array(subjects_test)==i+1)[0][0]
                     for i in range(len(subjects_test))]
 
-    # Iterate training and test on each subject separately
-    for i in range(9):
-        train_index = subj_train_order[i] 
-        test_index = subj_test_order[i]
-        np.random.seed(123)
-        X, y = read_bci_data_shallow_convnet.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
-        X_list = build_crops(X, increment=5)
-        X_indices = []
-        crops = len(X_list)
-        trials = len(X_list[0])
-        for a in range(crops):
-            for b in range(trials):
-                X_indices.append((a, b))
-        X_indices = np.array(X_indices)
-        train_indices, val_indices = train_test_split(X_indices, test_size=0.2)
-        
-        tf.reset_default_graph()
-        with tf.Session() as sess:
-            train(X_list, y, train_indices, val_indices, i+1)
-            del(X)
-            del(y)
-            del(X_list)
-            gc.collect()
-            X_test, y_test = read_bci_data_shallow_convnet.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
-            X_list = build_crops(X_test, increment=5)
+    for f in range(k_folds):
+        # Iterate training and test on each subject separately
+        for i in range(9):
+            train_index = subj_train_order[i] 
+            test_index = subj_test_order[i]
+            np.random.seed(123)
+            X, y = read_bci_data_shallow_convnet.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
+            X_list = build_crops(X, increment=10, start_idx=f)
             X_indices = []
             crops = len(X_list)
             trials = len(X_list[0])
             for a in range(crops):
                 for b in range(trials):
                     X_indices.append((a, b))
-            evaluate_model(X_list, y_test, X_indices, i+1)
-            del(X_test)
-            del(y_test)
-            del(X_list)
-            gc.collect()
+            X_indices = np.array(X_indices)
+            train_indices, val_indices = train_test_split(X_indices, test_size=0.2)
+            
+            tf.reset_default_graph()
+            with tf.Session() as sess:
+                train(X_list, y, train_indices, val_indices, subject=i+1, fold=f)
+                del(X)
+                del(y)
+                del(X_list)
+                gc.collect()
+                X_test, y_test = read_bci_data_shallow_convnet.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
+                X_list = build_crops(X_test, increment=10, start_idx=f)
+                X_indices = []
+                crops = len(X_list)
+                trials = len(X_list[0])
+                for a in range(crops):
+                    for b in range(trials):
+                        X_indices.append((a, b))
+                evaluate_model(X_list, y_test, X_indices, subject=i+1, fold=f)
+                del(X_test)
+                del(y_test)
+                del(X_list)
+                gc.collect()
