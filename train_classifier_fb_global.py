@@ -78,7 +78,7 @@ def train_single_subj(X_list, y, train_indices, val_indices, subject, fold):
     opt = optimizers.adam(lr=0.001, beta_2=0.999)
     model.compile(loss=loss, optimizer=opt, metrics=['accuracy'])
     cb = [callbacks.ProgbarLogger(count_mode='steps'),
-          callbacks.ReduceLROnPlateau(monitor='val_loss',factor=0.5,patience=5,min_lr=0.000001),
+          callbacks.ReduceLROnPlateau(monitor='val_loss',factor=0.5,patience=3,min_lr=0.000001),
           callbacks.ModelCheckpoint('./{}/{}/A0{:d}_model.hdf5'.format(folder_path,fold,subject),monitor='val_loss',verbose=0,
                                     save_best_only=True, period=1),
           callbacks.EarlyStopping(patience=early_stopping, monitor='accuracy')]
@@ -228,7 +228,7 @@ def train():
 
     for f in range(k_folds):            
         # Iterate training on each subject separately
-        for i in range(9):
+        for i in range(1):
             train_index = subj_train_order[i]
             np.random.seed(123)
             X, y, _ = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
@@ -244,7 +244,7 @@ def train():
             
             tf.compat.v1.reset_default_graph()
             with tf.compat.v1.Session() as sess:
-                train_single_subj(X_list, y, train_indices, val_indices, i+1)
+                train_single_subj(X_list, y, train_indices, val_indices, subject=i+1, fold=f)
                 del(X)
                 del(y)
                 del(X_list)
@@ -257,26 +257,27 @@ def evaluate():
     subj_test_order = [ np.argwhere(np.array(subjects_test)==i+1)[0][0]
                     for i in range(len(subjects_test))]
     
-    # Iterate test on each subject separately
-    for i in range(9):
-        test_index = subj_test_order[i]
-        X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
-        ''' Test Model '''
-        X_list = build_crops(X_test, increment=10)
-        X_indices = []
-        crops = len(X_list)
-        trials = len(X_list[0])
-        for a in range(crops):
-            for b in range(trials):
-                X_indices.append((a, b))
-        np.random.seed(123)
-        tf.compat.v1.reset_default_graph()
-        with tf.compat.v1.Session() as sess:
-            evaluate_single_subj(X_list, y_test, X_indices, i+1)
-            del(X_test)
-            del(y_test)
-            del(X_list)
-            gc.collect()
+    for f in range(k_folds):
+        # Iterate test on each subject separately
+        for i in range(1):
+            test_index = subj_test_order[i]
+            X_test, y_test, _ = read_bci_data_fb.raw_to_data(raw_edf_test[test_index], training=False, drop_rejects=True, subj=test_index)
+            ''' Test Model '''
+            X_list = build_crops(X_test, increment=10, start_idx=f)
+            X_indices = []
+            crops = len(X_list)
+            trials = len(X_list[0])
+            for a in range(crops):
+                for b in range(trials):
+                    X_indices.append((a, b))
+            np.random.seed(123)
+            tf.compat.v1.reset_default_graph()
+            with tf.compat.v1.Session() as sess:
+                evaluate_single_subj(X_list, y_test, X_indices, subject=i+1, fold=f)
+                del(X_test)
+                del(y_test)
+                del(X_list)
+                gc.collect()
 
 
 def visualise():
@@ -286,7 +287,7 @@ def visualise():
                     for i in range(len(subjects_train))]
 
     # Iterate training on each subject separately
-    for i in range(9):
+    for i in range():
         train_index = subj_train_order[i]
         np.random.seed(123)
         X, y, epochs = read_bci_data_fb.raw_to_data(raw_edf_train[train_index], training=True, drop_rejects=True, subj=train_index)
